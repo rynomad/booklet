@@ -21,5 +21,3 @@ class StaticPage extends React.Component {
 }
 
 export default observer(StaticPage)
-
-
