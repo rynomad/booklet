@@ -10,6 +10,25 @@ const section = node.named('section').props({
   type,
   _children
 }).views(self => ({
+  get menuIconClass(){
+    if (self.isSelected || self.isAncestorOfSelected){
+      return 'md-chevron-down'
+    } else {
+      return 'md-chevron-right'
+    }
+  },
+
+  get menuIcon(){
+    let length = getPathParts(self).length
+    let width = `${length * .3}em`
+    let paddingLeft = `${(length - 1) * .3}em`
+    return (
+      <div style={{width, paddingLeft}}>
+        <Icon icon={self.menuIconClass}/>
+      </div>
+    )
+  },
+
   get lineage(){
     return [self].concat(self.children.reduce(this.childReducer.bind(self, []), []))
   }

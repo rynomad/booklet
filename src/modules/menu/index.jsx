@@ -54,7 +54,7 @@ const menu = types.model('menu',{
   }
 }).views(self => ({
   get menu(){
-    return <Menu menu={self}>
+    return <Menu menu={self}/>
   }
 })).actions(self => ({
   open(){
