@@ -1,9 +1,14 @@
-import {types, hasParent, getParent, getRoot} from 'mobx-state-tree'
+import {types, hasParent, getParent, getRoot, getRelativePath} from 'mobx-state-tree'
 
-const id = types.maybe(types.identifier(types.string));
-const title = types.string()
+const ids = () => (((1+Math.random())*0x10000)|0).toString(16).substring(1)
 
-const Node = types.model('node',{
+const id = types.optional(types.identifier(types.string), (self) => {
+  return `node_${ids()}-${ids()}`
+})
+
+const title = types.maybe(types.string)
+
+const node = types.model('node',{
   id,
   title
 }).actions(self => ({
@@ -36,17 +41,17 @@ const Node = types.model('node',{
   },
   get currentSelected(){
     return self.root.menu._selected
-  }
+  },
   get isSelected(){
     return self.currentSelected === self
   },
   get isAncestorOfSelected(){
-    getRelativePath(self.currentSelected, self).split("/").join("").split('.').join('') === ''
+    return getRelativePath(self.currentSelected, self).split("/").join("").split('.').join('') === ''
   },
   get isChildOfSelected(){
     let path = getRelativePath(self.root.menu._selected, self)
     if (path.indexOf('..') >= 0) return false
-    if (path.split('/').length == 2) return true
+    if (path.split('/').length === 2) return true
     return false
   },
   get isYoungerSiblingOfSelected(){

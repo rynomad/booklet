@@ -31,11 +31,11 @@ const section = node.named('section').props({
 
   get lineage(){
     return [self].concat(self.children.reduce(this.childReducer.bind(self, []), []))
-  }
+  },
 
   get posterity(){
     return self.lineage.filter(node => !node.lineage)
-  }
+  },
 
   get children(){
     return self._children
