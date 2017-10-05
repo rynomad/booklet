@@ -63,4 +63,4 @@ const node = types.model('node',{
   }
 }))
 
-export default node
+export {node}

@@ -1,14 +1,15 @@
-import {types, hasParent, getParent} from 'mobx-state-tree'
+import {types} from 'mobx-state-tree'
 
-import any from '../any'
+import {node} from '../node'
+import {any, _any} from '../any'
 
 const type = types.literal('section')
-
-const _children = types.optional(types.array(any), [])
+console.log(any, _any)
+//const children = types.optional(types.array(_any), [])
 
 const section = node.named('section').props({
   type,
-  _children
+  //children
 }).views(self => ({
   get menuIconClass(){
     if (self.isSelected || self.isAncestorOfSelected){
@@ -17,7 +18,7 @@ const section = node.named('section').props({
       return 'md-chevron-right'
     }
   },
-
+/*
   get menuIcon(){
     let length = getPathParts(self).length
     let width = `${length * .3}em`
@@ -28,17 +29,13 @@ const section = node.named('section').props({
       </div>
     )
   },
-
+*/
   get lineage(){
     return [self].concat(self.children.reduce(this.childReducer.bind(self, []), []))
   },
 
   get posterity(){
     return self.lineage.filter(node => !node.lineage)
-  },
-
-  get children(){
-    return self._children
   },
 
   childReducer(items, node){

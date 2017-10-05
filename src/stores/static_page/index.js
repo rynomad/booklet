@@ -1,6 +1,6 @@
 import {types} from 'mobx-state-tree'
 
-import node from '../node'
+import {node} from '../node'
 
 const type = types.literal('static_page')
 
