@@ -7,7 +7,6 @@ const placeholder = 'Start writing...';
 const _essay = types.late(() => types.reference(essay))
 
 const note = node.named('note').props({
-  type : types.literal('note'),
   _essay,
   value,
   placeholder
@@ -65,9 +64,10 @@ const essay = node.named('essay').props({
   },
 
   createNote(){
-    self.notes.push(self.makeChild('note',{
+    self.notes.push({
+      _essay : self.id,
       placeholder : self.placeholder
-    }))
+    })
   },
 
   deleteNote(note){

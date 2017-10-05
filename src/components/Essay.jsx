@@ -18,7 +18,7 @@ const Essay = observer(({store}) => (
   <div style={{flex : 2, marginBottom : "auto"}}>
     <div style={{marginBottom : "auto"}}>
       <br/>
-        <h3 align={'center'} style={{lineHeight:"110%", marginRight : "2em", marginLeft : "2em"}}>{store.prompt}</h3>
+        <h3 style={{lineHeight:"110%", marginRight : "2em", marginLeft : "2em"}}>{store.prompt}</h3>
       <hr/>
     </div>
     <div style={{marginTop : "auto"}}>
