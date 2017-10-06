@@ -1,12 +1,12 @@
 import {types} from 'mobx-state-tree'
 
-import {node} from '../node'
+import {node} from '../booklet'
 
 const value = '';
 const placeholder = 'Start writing...';
 const _essay = types.late(() => types.reference(essay))
 
-const note = node.named('note').props({
+const note = types.late(() => node.named('note').props({
   _essay,
   value,
   placeholder
@@ -37,7 +37,7 @@ const note = node.named('note').props({
     self._essay.onEdit(null)
     self._essay.maybeCreateNote()
   }
-}))
+})))
 
 
 const notes = types.optional(types.array(note), []);
@@ -48,7 +48,7 @@ const cues = types.optional(types.array(types.string), [])
 
 const editing = types.maybe(types.reference(note))
 
-const essay = node.named('essay').props({
+const essay = types.late(() => node.named('essay').props({
   type : types.literal('essay'),
   prompt,
   notes,
@@ -103,6 +103,6 @@ const essay = node.named('essay').props({
 
     self.maybeCreateNote();
   }
-}))
+})))
 
 export {note, essay, _essay}

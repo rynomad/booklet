@@ -1,6 +1,6 @@
 import React from 'react';
 import proxyPropTypes from 'react-cosmos-utils/lib/proxy-prop-types';
-import {any} from './stores/any'
+import {any} from './stores/booklet'
 import {Page} from 'react-onsenui'
 
 import 'onsenui/css/onsenui.css'
