@@ -1,6 +1,11 @@
 import React from 'react';
 import proxyPropTypes from 'react-cosmos-utils/lib/proxy-prop-types';
 import {any} from './stores/any'
+import {Page} from 'react-onsenui'
+
+import 'onsenui/css/onsenui.css'
+import 'onsenui/css/onsen-css-components.css'
+import '@blueprintjs/core/dist/blueprint.css'
 
 const MobxProxy = props => {
   console.log(props)
@@ -15,11 +20,9 @@ const IframeProxy = props => {
   const { value: NextProxy, next } = props.nextProxy;
 
   return (
-    <div>
-      <div style={{width : 360, height : 640, backgroundColor : 'gray'}}>
+      <Page style={{width : 360, height : 640}}>
         <NextProxy {...props} nextProxy={next()}/>
-      </div>
-    </div>
+      </Page>
   )
 }
 

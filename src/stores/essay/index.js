@@ -12,23 +12,30 @@ const note = node.named('note').props({
   placeholder
 }).views(self => ({
   get isEditing(){
-    return (self._essay.editing === self)
+    console.log("isEditing")
+    return (self._essay.editing === self.id)
   },
   get isOpen(){
     let essay = self._essay
     let editing = essay.editing;
 
-    return (!editing || essay.indexOf(self) <= essay.indexOf(editing))
+    return (!editing || editing === self)
   }
 })).actions(self => ({
+  afterCreate(){
+    console.log("note created", self.isOpen);
+  },
   onEdit(){
+    console.log("onEdit")
     self._essay.onEdit(self)
   },
   onChange(value){
     self.value = value
   },
   onConfirm(){
+    console.log("onConfirm")
     self._essay.onEdit(null)
+    self._essay.maybeCreateNote()
   }
 }))
 
@@ -39,7 +46,7 @@ const prompt = types.optional(types.string, '')
 
 const cues = types.optional(types.array(types.string), [])
 
-const editing = types.maybe(note)
+const editing = types.maybe(types.reference(note))
 
 const essay = node.named('essay').props({
   type : types.literal('essay'),
@@ -60,14 +67,15 @@ const essay = node.named('essay').props({
   }
 })).actions(self => ({
   afterCreate(){
+    console.log("afterCreate(")
     self.maybeCreateNote()
   },
 
   createNote(){
-    self.notes.push({
+    self.notes = self.notes.concat([{
       _essay : self.id,
       placeholder : self.placeholder
-    })
+    }])
   },
 
   deleteNote(note){
@@ -75,12 +83,13 @@ const essay = node.named('essay').props({
     self.notes = self.notes.slice(0, index).concat(self.notes.slice(index + 1))
   },
 
-  onEdit(note){
-    self.editing = note;
+  onEdit(id){
+    self.editing = id;
   },
 
   maybeCreateNote(){
     if (self.notes.filter(note => !note.value).length === 0){
+      console.log("create")
       self.createNote();
     }
   },
