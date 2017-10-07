@@ -147,9 +147,10 @@ const processNode = (scaffold, booklet, section) => {
   booklet.nodes.push(node)
 } 
 
-const createBooklet = ({id, title, children}) => {
+const createBooklet = ({id, title, root}) => {
   let _booklet = { id, title, nodes : [] }
-  children.forEach((scaffold) => processNode(scaffold, _booklet))
+  root.children.forEach((scaffold) => processNode(scaffold, _booklet))
+  console.log(_booklet)
   return booklet.create(_booklet)
 }
 
