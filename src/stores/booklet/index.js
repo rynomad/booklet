@@ -8,12 +8,12 @@ const _any = types.late(() => types.union(_section, _static_page, _essay))
 
 const ids = () => (((1+Math.random())*0x10000)|0).toString(16).substring(1)
 
-const id = types.identifier(types.string)
+const id = types.optional(types.identifier(types.string), () => ids())
 
 const title = types.maybe(types.string)
 
 const _section = types.late(() => types.maybe(types.reference(section)))
-const _booklet = types.late(() => types.reference(booklet))
+const _booklet = types.maybe(types.late(() => types.reference(booklet)))
 
 const node = types.model('node',{
   id,
