@@ -121,7 +121,36 @@ const root = section.named('root')
 
 const booklet = node.named('booklet').props({
   nodes,
-  root 
+  root
 })
 
-export {node, any, _any, booklet, _booklet, section, _section}
+const processNode = (scaffold, booklet, section) => {
+  let _booklet = booklet.id
+  let _section = _booklet
+  let {type, children, title} = scaffold
+  let id = ids()
+  if (section){
+    _section = section.id
+    section.children.push(id)
+  }
+
+  let node = null
+   
+
+  if (type === `section`){
+    node = {id, type, title, _booklet, _section, children : []};
+    children.forEach((scaffold) => processNode(scaffold, booklet, node))
+  } else {
+    node = {id, type, title, _booklet, _section, ...scaffold }
+  }
+
+  booklet.nodes.push(node)
+} 
+
+const createBooklet = ({id, title, children}) => {
+  let _booklet = { id, title, nodes : [] }
+  children.forEach((scaffold) => processNode(scaffold, _booklet))
+  return booklet.create(_booklet)
+}
+
+export {node, any, _any, booklet, _booklet, section, _section, createBooklet}

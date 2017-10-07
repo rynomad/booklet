@@ -16,7 +16,7 @@ const MenuItem = observer(({store, key}) => (
 
 const Menu = observer(({store}) => (
   <List
-    dataSource={store.root.lineage}
+    dataSource={store.lineage}
     renderRow={(store, index) => (<MenuItem store={store} key={index}/>)}
   />
 ))

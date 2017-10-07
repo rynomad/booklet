@@ -5,31 +5,6 @@ import {view, _view} from '../view'
 
 import {any, _any as _selected} from '../any'
 
-const MenuItem = observer(({node, key}) => (
-  <Collapse key={key} isOpen={node.menuIsOpen}>
-    <ListItem 
-      key={index} 
-      onClick={node.onMenuSelect} 
-      style={{background : node.background}}>
-      {node.menuIcon}
-      {node.title}
-    </ListItem>
-  </Collapse>
-))
-
-const RenderMenuItem = (node, index) => (
-  <MenuItem node={node} key={index}/>
-) 
-
-const Menu = observer(({menu}) => (
-  <Page>
-    <List
-      dataSource={menu._section.lineage}
-      renderRow={RenderMenuItem}
-    />
-  </Page>
-))
-
 const type = types.literal('menu')
 
 const isOpen = false
@@ -52,11 +27,7 @@ const menu = types.model('menu',{
 
     return null
   }
-}).views(self => ({
-  get menu(){
-    return <Menu menu={self}/>
-  }
-})).actions(self => ({
+}).actions(self => ({
   open(){
     self.isOpen = true
   },
