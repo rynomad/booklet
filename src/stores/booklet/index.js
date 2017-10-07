@@ -117,9 +117,11 @@ const section = node.named('section').props({
 
 
 const nodes = types.array(any);
+const root = section.named('root')
 
 const booklet = node.named('booklet').props({
-  nodes
+  nodes,
+  root 
 })
 
 export {node, any, _any, booklet, _booklet, section, _section}
