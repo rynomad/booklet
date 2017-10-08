@@ -1,10 +1,21 @@
 import {types} from 'mobx-state-tree'
 
 import {static_page, _static_page} from '../static_page'
-import {essay, _essay, note} from '../essay'
+import {essay, _essay} from '../essay'
 
-const any = types.late(() => types.union(section, static_page, essay, note))
-const _any = types.late(() => types.union(_section, _static_page, _essay))
+const any = types.late(() => types.union(section, static_page, essay))
+const _any = types.union((id) => {
+  let parts = id.split(':');
+  let last = parts.pop()
+  let type = last.split('-')[0]
+  switch(type){
+    case 'section': return _section;
+    case 'static_page' : return _static_page;
+    case 'essay' : return _essay;
+    default:
+    throw new Error(`type ${type} not in reference dispatcher`)
+  }
+})
 
 const ids = () => (((1+Math.random())*0x10000)|0).toString(16).substring(1)
 
@@ -75,6 +86,7 @@ const node = types.model('node',{
 const type = types.literal('section')
 
 const children = types.optional(types.array(_any), [])
+
 const section = node.named('section').props({
   type,
   children
@@ -105,53 +117,55 @@ const section = node.named('section').props({
 })).actions((self) => ({
   createChild(obj){
     let node = {
-      id : `${self.id}_${obj.type}-${ids()}`,
+      id : `${self.id}:${obj.type}-${ids()}`,
+      type : obj.type,
       _booklet : self._booklet.id,
-      _section : self.id,
-      ...obj
+      _section : self.id
     }
-    self._booklet.addNode(node);
+    if (obj.type !== 'section'){
+      Object.assign(node, obj);
+    }
+    console.log(node)
+    node = self._booklet.addNode(node);
+    console.log("add to children", node.type)
     self.children.push(node.id);
+    return node
   }
 }))
 
 
-const nodes = types.array(any);
-const root = section.named('root')
+const nodes = types.array(any)
 
-const booklet = node.named('booklet').props({
-  nodes,
-  root
-})
-
-const processNode = (scaffold, booklet, section) => {
-  let _booklet = booklet.id
-  let _section = _booklet
-  let {type, children, title} = scaffold
-  let id = ids()
-  if (section){
-    _section = section.id
-    section.children.push(id)
+const booklet = section.named('booklet').props({
+  type : types.undefined,
+  nodes
+}).actions(self => ({
+  addNode(obj){
+    self.nodes.push(obj)
+    return self.nodes[self.nodes.length - 1]
   }
+}))
 
-  let node = null
-   
-
+const processNode = (node, parent) => {
+  let {type, title, children} = node
+  
   if (type === `section`){
-    node = {id, type, title, _booklet, _section, children : []};
-    children.forEach((scaffold) => processNode(scaffold, booklet, node))
+    console.log("create?", parent)
+    node = parent.createChild({
+      type,
+      title
+    })
+    children.forEach((next) => processNode(next, node))
   } else {
-    node = {id, type, title, _booklet, _section, ...scaffold }
+    parent.createChild(node)
   }
-
-  booklet.nodes.push(node)
 } 
 
-const createBooklet = ({id, title, root}) => {
-  let _booklet = { id, title, nodes : [] }
-  root.children.forEach((scaffold) => processNode(scaffold, _booklet))
+const createBooklet = ({id, title, children}) => {
+  let _booklet = booklet.create({ id, title, nodes : [], _booklet : id })
+  children.forEach((scaffold) => processNode(scaffold, _booklet))
   console.log(_booklet)
-  return booklet.create(_booklet)
+  return _booklet
 }
 
 export {node, any, _any, booklet, _booklet, section, _section, createBooklet}
