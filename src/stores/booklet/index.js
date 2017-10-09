@@ -160,6 +160,11 @@ const booklet = section.named('booklet').props({
 }).views(self => ({
   get menuSelected(){
     return self._menuSelected || self
+  },
+  get viewIndex(){
+    let index = self.lineage.indexOf(self.menuSelected);
+    while(self.lineage[index].lineage) index++
+    return self.posterity.indexOf(self.lineage[index])
   }
 })).actions(self => ({
   addNode(obj){
@@ -168,8 +173,13 @@ const booklet = section.named('booklet').props({
   },
   onMenuSelect(id){
     self._menuSelected = id;
-    console.log("booklet.onMenuSelect", id);
-    window.selected = self._menuSelected
+  },
+  onViewOverscroll(){
+
+  },
+  onViewPostChange(evt){
+    let id = self.posterity[evt.activeIndex].id
+    self.onMenuSelect(id)
   }
 }))
 
