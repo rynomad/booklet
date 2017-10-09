@@ -33,9 +33,20 @@ const node = types.model('node',{
   title
 }).actions(self => ({
   onMenuSelect(){
-    self._booklet.menu.onMenuSelect(self.id)
+    self._booklet.onMenuSelect(self.id)
   }
 })).views(self => ({
+  get depth(){
+    let depth = 0;
+    let next = self._section;
+    while (next && next !== self){
+      depth++
+      next = next._section
+    }
+    console.log("depth")
+    console.log(depth)
+    return depth
+  },
   get iconStyle(){
     return ({ width : `${self.depth * .3}em`, paddingLeft : `${(self.depth - 1) * .3}em`});
   },
@@ -49,7 +60,7 @@ const node = types.model('node',{
     return "white"
   },
   get currentSelected(){
-    return self._booklet.menu._selected
+    return self._booklet.menuSelected
   },
   get siblingIndex(){
     if (!self._section) return -1;
@@ -62,6 +73,7 @@ const node = types.model('node',{
     return self.currentSelected === self
   },
   get isAncestorOfSelected(){
+    if (!self.currentSelected) return false
     let next = self.currentSelected._section;
     while (next){
       if (next === self) return true
@@ -70,6 +82,7 @@ const node = types.model('node',{
     return false;
   },
   get isChildOfSelected(){
+    if (!self.currentSelected) return false
     return (self.currentSelected._section === self)
   },
   get isYoungerSiblingOfSelected(){
@@ -91,7 +104,7 @@ const section = node.named('section').props({
   type,
   children
 }).views(self => ({
-  get menuIconClass(){
+  get menuIcon(){
     if (self.isSelected || self.isAncestorOfSelected){
       return 'md-chevron-down'
     } else {
@@ -100,7 +113,7 @@ const section = node.named('section').props({
   },
 
   get lineage(){
-    return [self].concat(self.children.reduce(this.childReducer.bind(self, []), []))
+    return [self].concat(self.children.reduce(this.childReducer, []))
   },
 
   get posterity(){
@@ -119,6 +132,7 @@ const section = node.named('section').props({
     let node = {
       id : `${self.id}:${obj.type}-${ids()}`,
       type : obj.type,
+      title : obj.title,
       _booklet : self._booklet.id,
       _section : self.id
     }
@@ -127,7 +141,7 @@ const section = node.named('section').props({
     }
     console.log(node)
     node = self._booklet.addNode(node);
-    console.log("add to children", node.type)
+    //console.log("add to children", node.type)
     self.children.push(node.id);
     return node
   }
@@ -143,6 +157,9 @@ const booklet = section.named('booklet').props({
   addNode(obj){
     self.nodes.push(obj)
     return self.nodes[self.nodes.length - 1]
+  },
+  onMenuSelect(id){
+    console.log("booklet.onMenuSelect", id);
   }
 }))
 
@@ -150,7 +167,7 @@ const processNode = (node, parent) => {
   let {type, title, children} = node
   
   if (type === `section`){
-    console.log("create?", parent)
+    console.log("create?", title)
     node = parent.createChild({
       type,
       title
@@ -164,7 +181,7 @@ const processNode = (node, parent) => {
 const createBooklet = ({id, title, type, children}) => {
   let _booklet = booklet.create({ id, type, title, nodes : [], _booklet : id })
   children.forEach((scaffold) => processNode(scaffold, _booklet))
-  console.log(_booklet)
+  console.log(_booklet.lineage)
   return _booklet
 }
 

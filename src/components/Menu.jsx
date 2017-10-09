@@ -2,14 +2,17 @@ import React from 'react'
 import {Collapse} from "@blueprintjs/core"
 import {List, ListItem, Icon} from 'react-onsenui'
 import {observer} from 'mobx-react'
+import 'onsenui/css/onsenui.css'
+import 'onsenui/css/onsen-css-components.css'
+import '@blueprintjs/core/dist/blueprint.css'
 
 const MenuItem = observer(({store}) => (
-  <Collapse isOpen={store.menuIsOpen}>
+  <Collapse isOpen={true}>
     <ListItem 
       onClick={store.onMenuSelect} 
       style={{background : store.menuBackground}}>
       <Icon style={store.menuIconStyle} icon={store.menuIcon}/>
-      {store.title}
+      {store.title || `${store.menuIcon} ${store.title}`}
     </ListItem>
   </Collapse>
 ))
