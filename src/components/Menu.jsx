@@ -3,8 +3,8 @@ import {Collapse} from "@blueprintjs/core"
 import {List, ListItem} from 'react-onsenui'
 import {observer} from 'mobx-react'
 
-const MenuItem = observer(({store, key}) => (
-  <Collapse key={key} isOpen={store.menuIsOpen}>
+const MenuItem = observer(({store}) => (
+  <Collapse isOpen={store.menuIsOpen}>
     <ListItem 
       onClick={store.onMenuSelect} 
       style={{background : store.background}}>

@@ -1,6 +1,7 @@
 import {createBooklet} from '../../../stores/booklet'
 
 const bk = createBooklet({
+    type : 'booklet',
     id : 'testbooklet',
     title : "Basic",
     children : [

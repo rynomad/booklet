@@ -3,7 +3,7 @@ import {types} from 'mobx-state-tree'
 import {static_page, _static_page} from '../static_page'
 import {essay, _essay} from '../essay'
 
-const any = types.late(() => types.union(section, static_page, essay))
+const any = types.late(() => types.union(booklet, section, static_page, essay))
 const _any = types.union((id) => {
   let parts = id.split(':');
   let last = parts.pop()
@@ -137,7 +137,7 @@ const section = node.named('section').props({
 const nodes = types.array(any)
 
 const booklet = section.named('booklet').props({
-  type : types.undefined,
+  type : types.literal('booklet'),
   nodes
 }).actions(self => ({
   addNode(obj){
@@ -161,8 +161,8 @@ const processNode = (node, parent) => {
   }
 } 
 
-const createBooklet = ({id, title, children}) => {
-  let _booklet = booklet.create({ id, title, nodes : [], _booklet : id })
+const createBooklet = ({id, title, type, children}) => {
+  let _booklet = booklet.create({ id, type, title, nodes : [], _booklet : id })
   children.forEach((scaffold) => processNode(scaffold, _booklet))
   console.log(_booklet)
   return _booklet

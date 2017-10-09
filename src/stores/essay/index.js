@@ -1,4 +1,4 @@
-import {types} from 'mobx-state-tree'
+import {types, getParent} from 'mobx-state-tree'
 
 import {node} from '../booklet'
 
@@ -7,10 +7,12 @@ const placeholder = 'Start writing...';
 const _essay = types.late(() => types.reference(essay))
 
 const note = types.late(() => node.named('note').props({
-  _essay,
   value,
   placeholder
 }).views(self => ({
+  get _essay(){
+    return getParent(self, 2)
+  },
   get isEditing(){
     console.log("isEditing")
     return (self._essay.editing === self.id)
@@ -73,7 +75,6 @@ const essay = types.late(() => node.named('essay').props({
 
   createNote(){
     self.notes = self.notes.concat([{
-      _essay : self.id,
       placeholder : self.placeholder
     }])
   },
