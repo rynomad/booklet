@@ -10,7 +10,7 @@ const StaticPage = observer((props, a2, a3) => {
     <Card style={{verticalAlign: 'middle', flex : "1", padding: "1em", margin: "2em"}}>
     {
       props.store.text.map((text, index) => (
-        <Row key={index} style={{justifyContent : 'center', paddingBottom : "1em"}}>
+        <Row key={index} style={{justifyContent : 'center'}}>
           <h5 style={{align : 'center'}}>{text}</h5>
         </Row>
       ))
