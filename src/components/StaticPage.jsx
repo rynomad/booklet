@@ -7,7 +7,7 @@ import 'onsenui/css/onsen-css-components.css'
 const StaticPage = observer((props, a2, a3) => {
   console.log(props, a2, a3);  
   return (
-    <Card style={{verticalAlign: 'middle', padding: "1em", margin: "2em"}}>
+    <Card style={{verticalAlign: 'middle', flex : "1", padding: "1em", margin: "2em"}}>
     {
       props.store.text.map((text, index) => (
         <Row key={index} style={{justifyContent : 'center', paddingBottom : "1em"}}>
