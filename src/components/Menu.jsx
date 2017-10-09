@@ -7,12 +7,12 @@ import 'onsenui/css/onsen-css-components.css'
 import '@blueprintjs/core/dist/blueprint.css'
 
 const MenuItem = observer(({store}) => (
-  <Collapse isOpen={true}>
+  <Collapse isOpen={store.menuIsOpen}>
     <ListItem 
-      onClick={store.onMenuSelect} 
+      onClick={() => store.onMenuSelect(store.id)} 
       style={{background : store.menuBackground}}>
       <Icon style={store.menuIconStyle} icon={store.menuIcon}/>
-      {store.title || `${store.menuIcon} ${store.title}`}
+      {store.title || `${store.menuIcon}`}
     </ListItem>
   </Collapse>
 ))

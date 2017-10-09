@@ -5,10 +5,13 @@ import {essay, _essay} from '../essay'
 
 const any = types.late(() => types.union(booklet, section, static_page, essay))
 const _any = types.union((id) => {
+  if (!id) return types.undefined;
+  console.log("!!!!!",id)
   let parts = id.split(':');
   let last = parts.pop()
   let type = last.split('-')[0]
   switch(type){
+    case 'booklet': return _booklet
     case 'section': return _section;
     case 'static_page' : return _static_page;
     case 'essay' : return _essay;
@@ -48,7 +51,7 @@ const node = types.model('node',{
     return depth
   },
   get iconStyle(){
-    return ({ width : `${self.depth * .3}em`, paddingLeft : `${(self.depth - 1) * .3}em`});
+    return ({ width : `${self.depth * .3}em`, paddingLeft : `${(self.depth - 1) * .3}em` });
   },
   get menuIcon(){
     return 'md-circle'
@@ -134,7 +137,7 @@ const section = node.named('section').props({
       type : obj.type,
       title : obj.title,
       _booklet : self._booklet.id,
-      _section : self.id
+      _section : self.id !== self._booklet.id ? self.id : null
     }
     if (obj.type !== 'section'){
       Object.assign(node, obj);
@@ -152,13 +155,19 @@ const nodes = types.array(any)
 
 const booklet = section.named('booklet').props({
   type : types.literal('booklet'),
+  _menuSelected : _any,
   nodes
-}).actions(self => ({
+}).views(self => ({
+  get menuSelected(){
+    return self._menuSelected || self
+  }
+})).actions(self => ({
   addNode(obj){
     self.nodes.push(obj)
     return self.nodes[self.nodes.length - 1]
   },
   onMenuSelect(id){
+    self._menuSelected = id;
     console.log("booklet.onMenuSelect", id);
   }
 }))
@@ -179,7 +188,7 @@ const processNode = (node, parent) => {
 } 
 
 const createBooklet = ({id, title, type, children}) => {
-  let _booklet = booklet.create({ id, type, title, nodes : [], _booklet : id })
+  let _booklet = booklet.create({ id, type, _menuSelected : id, title, nodes : [], _booklet : id })
   children.forEach((scaffold) => processNode(scaffold, _booklet))
   console.log(_booklet.lineage)
   return _booklet
