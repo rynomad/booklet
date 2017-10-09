@@ -5,8 +5,7 @@ import {essay, _essay} from '../essay'
 
 const any = types.late(() => types.union(booklet, section, static_page, essay))
 const _any = types.union((id) => {
-  if (!id) return types.undefined;
-  console.log("!!!!!",id)
+  if (!id) return types.undefined;  
   let parts = id.split(':');
   let last = parts.pop()
   let type = last.split('-')[0]
@@ -40,26 +39,28 @@ const node = types.model('node',{
   }
 })).views(self => ({
   get depth(){
-    let depth = 0;
+    if (self === self._booklet) return 1
+    let depth = 2;
     let next = self._section;
     while (next && next !== self){
       depth++
       next = next._section
     }
-    console.log("depth")
-    console.log(depth)
+    console.log(self.id,"depth", depth)
     return depth
   },
-  get iconStyle(){
-    return ({ width : `${self.depth * .3}em`, paddingLeft : `${(self.depth - 1) * .3}em` });
+  get menuIconStyle(){
+    return ({ width : `${self.depth}em`, paddingLeft : `${(self.depth - 1)}em` });
   },
   get menuIcon(){
     return 'md-circle'
   },
   get menuBackground(){
     if (self.isSelected){
+      console.log(self.id, "grey")
       return "#CCC"
     }
+    console.log(self.id,"white")
     return "white"
   },
   get currentSelected(){
@@ -76,7 +77,6 @@ const node = types.model('node',{
     return self.currentSelected === self
   },
   get isAncestorOfSelected(){
-    if (!self.currentSelected) return false
     let next = self.currentSelected._section;
     while (next){
       if (next === self) return true
@@ -85,8 +85,8 @@ const node = types.model('node',{
     return false;
   },
   get isChildOfSelected(){
-    if (!self.currentSelected) return false
-    return (self.currentSelected._section === self)
+    console.log(self.id, self.currentSelected, self.currentSelected._section === self)
+    return (self.currentSelected === self._section)
   },
   get isYoungerSiblingOfSelected(){
     let currentSelected = self.currentSelected
@@ -169,6 +169,7 @@ const booklet = section.named('booklet').props({
   onMenuSelect(id){
     self._menuSelected = id;
     console.log("booklet.onMenuSelect", id);
+    window.selected = self._menuSelected
   }
 }))
 

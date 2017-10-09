@@ -6,8 +6,8 @@ import 'onsenui/css/onsenui.css'
 import 'onsenui/css/onsen-css-components.css'
 import '@blueprintjs/core/dist/blueprint.css'
 
-const MenuItem = observer(({store}) => (
-  <Collapse isOpen={store.menuIsOpen}>
+const MenuItem = observer(({store, id}) => (
+  <Collapse key={id} isOpen={store.menuIsOpen}>
     <ListItem 
       onClick={() => store.onMenuSelect(store.id)} 
       style={{background : store.menuBackground}}>
@@ -20,7 +20,7 @@ const MenuItem = observer(({store}) => (
 const Menu = observer(({store}) => (
   <List
     dataSource={store.lineage}
-    renderRow={(store, index) => (<MenuItem store={store} key={index}/>)}
+    renderRow={(store, index) => (<MenuItem store={store} key={index} id={index}/>)}
   />
 ))
 
