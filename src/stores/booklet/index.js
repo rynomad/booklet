@@ -102,10 +102,12 @@ const node = types.model('node',{
 const type = types.literal('section')
 
 const children = types.optional(types.array(_any), [])
+const ref = types.maybe(_any)
 
 const section = node.named('section').props({
   type,
-  children
+  children,
+  ref
 }).views(self => ({
   get menuIcon(){
     if (self.isSelected || self.isAncestorOfSelected){
@@ -131,7 +133,8 @@ const section = node.named('section').props({
     }
   }
 })).actions((self) => ({
-  createChild(obj){
+  createChild(obj, offset){
+    offset = offset ? offset < 0 ? (self.children.length + offset - 1) : offset : self.children.length - 1
     let node = {
       id : `${self.id}:${obj.type}-${ids()}`,
       type : obj.type,
@@ -145,8 +148,23 @@ const section = node.named('section').props({
     console.log(node)
     node = self._booklet.addNode(node);
     //console.log("add to children", node.type)
-    self.children.push(node.id);
+    self.children.splice(offset, 0, node.id);
     return node
+  },
+  fromScaffold(node, parent){
+    parent = parent || self._booklet
+    let {type, title, children} = node
+    
+    if (type === `section`){
+      console.log("create?", title)
+      node = self._booklet.createChild({
+        type,
+        title
+      })
+      children.forEach((next) => processNode(next, node))
+    } else {
+      parent.createChild(node)
+    }
   }
 }))
 
@@ -200,7 +218,7 @@ const processNode = (node, parent) => {
 
 const createBooklet = ({id, title, type, children}) => {
   let _booklet = booklet.create({ id, type, _menuSelected : id, title, nodes : [], _booklet : id })
-  children.forEach((scaffold) => processNode(scaffold, _booklet))
+  children.forEach(_booklet.fromScaffold)
   console.log(_booklet.lineage)
   return _booklet
 }
