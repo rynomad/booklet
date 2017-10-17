@@ -1,16 +1,14 @@
-import {types} from 'mobx-state-tree'
+import {types, getParent} from 'mobx-state-tree'
 
-import {static_page, _static_page} from '../static_page'
-import {essay, _essay} from '../essay'
-
-const any = types.late(() => types.union(booklet, section, static_page, essay))
+const any = types.late(() => types.union(booklet, section, static_page, essay, factory))
 const _any = types.union((id) => {
   if (!id) return types.undefined;  
   let parts = id.split(':');
   let last = parts.pop()
   let type = last.split('-')[0]
   switch(type){
-    case 'booklet': return _booklet
+    case 'factory': return _factory;
+    case 'booklet': return _booklet;
     case 'section': return _section;
     case 'static_page' : return _static_page;
     case 'essay' : return _essay;
@@ -102,12 +100,10 @@ const node = types.model('node',{
 const type = types.literal('section')
 
 const children = types.optional(types.array(_any), [])
-const ref = types.maybe(_any)
 
 const section = node.named('section').props({
   type,
-  children,
-  ref
+  children
 }).views(self => ({
   get menuIcon(){
     if (self.isSelected || self.isAncestorOfSelected){
@@ -134,7 +130,7 @@ const section = node.named('section').props({
   }
 })).actions((self) => ({
   createChild(obj, offset){
-    offset = offset ? offset < 0 ? (self.children.length + offset - 1) : offset : self.children.length - 1
+    offset = offset ? offset < 0 ? (self.children.length + offset - 1) : offset : self.children.length
     let node = {
       id : `${self.id}:${obj.type}-${ids()}`,
       type : obj.type,
@@ -223,4 +219,146 @@ const createBooklet = ({id, title, type, children}) => {
   return _booklet
 }
 
-export {node, any, _any, booklet, _booklet, section, _section, createBooklet}
+const value = '';
+const placeholder = 'Start writing...';
+const _essay = types.late(() => types.reference(essay))
+
+const note = node.named('note').props({
+  value,
+  placeholder
+}).views(self => ({
+  get _essay(){
+    return getParent(self, 2)
+  },
+  get isEditing(){
+    console.log("isEditing")
+    return (self._essay.editing === self.id)
+  },
+  get isOpen(){
+    let essay = self._essay
+    let editing = essay.editing;
+
+    return (!editing || editing === self)
+  }
+})).actions(self => ({
+  afterCreate(){
+    console.log("note created", self.isOpen);
+  },
+  onEdit(){
+    console.log("onEdit")
+    self._essay.onEdit(self)
+  },
+  onChange(value){
+    self.value = value
+  },
+  onConfirm(){
+    console.log("onConfirm")
+    self._essay.onEdit(null)
+    self._essay.maybeCreateNote()
+  }
+}))
+
+const static_page = node.named('static_page').props({
+  type : types.literal('static_page'),
+  text : types.optional(types.array(types.string), [])
+})
+
+const _static_page = types.reference(static_page)
+
+const notes = types.optional(types.array(note), []);
+
+const prompt = types.optional(types.string, '')
+
+const cues = types.optional(types.array(types.string), [])
+
+const editing = types.maybe(types.reference(note))
+
+const essay = node.named('essay').props({
+  type : types.literal('essay'),
+  prompt,
+  notes,
+  cues,
+  editing
+}).views(self => ({
+  get fresh_cues(){
+    if (!self.notes.length) return self.cues;
+    
+    let cues = self.cues.filter(cue => self.notes.map(({placeholder}) => placeholder).indexOf(cue) === -1)
+    if (!cues.length) return self.cues;
+    return cues;
+  },
+  get placeholder(){
+    return self.fresh_cues[self.notes.length % self.fresh_cues.length];
+  }
+})).actions(self => ({
+  afterCreate(){
+    console.log("afterCreate(")
+    self.maybeCreateNote()
+  },
+
+  createNote(){
+    self.notes = self.notes.concat([{
+      placeholder : self.placeholder
+    }])
+  },
+
+  deleteNote(note){
+    let index = self.notes.indexOf(note);
+    self.notes = self.notes.slice(0, index).concat(self.notes.slice(index + 1))
+  },
+
+  onEdit(id){
+    self.editing = id;
+  },
+
+  maybeCreateNote(){
+    if (self.notes.filter(note => !note.value).length === 0){
+      console.log("create")
+      self.createNote();
+    }
+  },
+
+  onConfirm(note){
+    self.editing = null;
+
+    if (!note.value) {
+      self.deleteNote(note);
+    }
+
+    self.maybeCreateNote();
+  }
+}))
+
+const title_note = note.named('title_note')
+.views(self => ({
+  get _essay(){return {}}
+}))
+.actions(self => ({
+  onEdit(){}
+}))
+
+const factory = node.named('factory').props({
+  type : types.literal('factory'),
+  prompt,
+  title_note,
+  template : essay,
+  appendix_template : section
+}).actions(self => ({
+  createEssay(){
+    console.log(self)
+    let essay = self._section.createChild({
+      type : 'essay',
+      title : self.title.value,
+      cues : self.template.cues,
+      prompt : self.template.prompt
+    }, -1)
+    self._section._section.children[self._section._section.children.length - 1].fromScaffold(Object.assign({
+      ref : essay.id,
+    }, self.appendix_template))
+
+  }
+}))
+
+const _factory = types.reference(factory)
+
+export {node, any, _any, booklet, _booklet, section, _section, createBooklet, factory}
