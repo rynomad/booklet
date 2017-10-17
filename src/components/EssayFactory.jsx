@@ -1,5 +1,5 @@
 import React from 'react'
-import { EditableText, Collapse } from "@blueprintjs/core"
+import { EditableText } from "@blueprintjs/core"
 import { Card, Col, Button } from 'react-onsenui'
 import { observer } from 'mobx-react'
 import 'onsenui/css/onsenui.css'

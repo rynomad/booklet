@@ -170,15 +170,19 @@ const nodes = types.array(any)
 const booklet = section.named('booklet').props({
   type : types.literal('booklet'),
   _menuSelected : _any,
+  _menuOpen : false,
   nodes
 }).views(self => ({
   get menuSelected(){
     return self._menuSelected || self
   },
-  get viewIndex(){
+  get viewPage(){
     let index = self.lineage.indexOf(self.menuSelected);
     while(self.lineage[index].lineage) index++
-    return self.posterity.indexOf(self.lineage[index])
+    return self.lineage[index]
+  },
+  get viewIndex(){
+    return self.posterity.indexOf(self.viewPage)
   }
 })).actions(self => ({
   addNode(obj){
@@ -194,6 +198,12 @@ const booklet = section.named('booklet').props({
   onViewPostChange(evt){
     let id = self.posterity[evt.activeIndex].id
     self.onMenuSelect(id)
+  },
+  showMenu(){
+    self._menuOpen = true;
+  },
+  hideMenu(){
+    self._menuOpen = false;
   }
 }))
 
@@ -334,7 +344,8 @@ const title_note = note.named('title_note')
   get _essay(){return {}}
 }))
 .actions(self => ({
-  onEdit(){}
+  onEdit(){},
+  onConfirm(){}
 }))
 
 const factory = node.named('factory').props({
@@ -348,10 +359,11 @@ const factory = node.named('factory').props({
     console.log(self)
     let essay = self._section.createChild({
       type : 'essay',
-      title : self.title.value,
-      cues : self.template.cues,
-      prompt : self.template.prompt
+      title : self.title_note.value,
+      cues : JSON.parse(JSON.stringify(self.template.cues)),
+      prompt : self.template.prompt + ''
     }, -1)
+    console.log(self.appendix_template);
     self._section._section.children[self._section._section.children.length - 1].fromScaffold(Object.assign({
       ref : essay.id,
     }, self.appendix_template))
