@@ -1,8 +1,116 @@
-import {types, getParent} from 'mobx-state-tree'
+import {types, getParent, getSnapshot, getRelativePath, isRoot, detach, getPath, getRoot, getType, isStateTreeNode} from 'mobx-state-tree'
+import uuid4 from 'uuid/v4'
+import json_stringify from 'safe-json-stringify'
 
-const any = types.late(() => types.union(booklet, section, static_page, essay, factory))
+const NODES = new Map()
+const noop = () => ({})
+
+const Define = (name, props = noop, views = noop, actions = noop, superType = node) => {
+  if (!name) throw new Error(`node required`)
+  if (NODES.has(name)) throw new Error(`already have type ${name}`)
+
+  const type = superType.named(name).props({
+    type : name,
+    nodes : types.maybe(AnyMap),
+    id : types.optional(types.identifier(), () => `__${name}__${uuid4()}`),
+    ...props
+  }).views(views).actions(actions).actions(self => {
+    let oldAfterCreate = self.afterCreate || noop
+    return ({
+      afterCreate(){
+        oldAfterCreate()
+
+        setImmediate(() => {
+          const _root = getRoot(self)
+          if (_root === self || _root.nodes === self || _root.nodes === getParent(self)) return
+
+          const parent = getParent(self)
+          const propName = getRelativePath(parent, self).slice(1);
+          if (parent.replaceWithReference) {
+            parent.replaceWithReference(propName)
+          } else if (parent.constructor.name === 'ObservableArray'){
+            const grandparent = getParent(parent)
+            const arrayPropName = getRelativePath(grandparent, parent).slice(1)
+            grandparent.replaceArrayMemberWithReference(arrayPropName, Number.parseInt(propName))
+          } else {
+            console.warn(`don't know what's going on here, expected property or array`)
+            console.warn(`parent : \n${json_stringify(getSnapshot(parent))}`)
+          }
+        })
+      },
+      set(propName, value){
+        self[propName] = value;
+      },
+      addNode(node){
+        if (!isRoot(self)) throw new Error(`nodes must be added to root only (cwd : ${getPath(self)}):\n${getSnapshot(node)}`);
+        if (!self.nodes) self.nodes = {}
+        if (isStateTreeNode(node)) node = getSnapshot(node)
+        self.nodes.set(node.id, node)
+      },
+      clone(){
+
+      },
+      replaceWithReference(propName){
+        const node = self[propName]
+        detach(self[propName])
+        getRoot(self).addNode(node)
+        self[propName] = node.id
+      },
+      replaceArrayMemberWithReference(propName, index){
+        const node = self[propName][index]
+        detach(self[propName][index])
+        console.log("new array", getSnapshot(self[propName]))
+        getRoot(self).addNode(node)
+
+        self[propName].splice(index, 0, node.id)
+      },
+      deepClone(){
+
+      }
+    })
+  })
+
+  const reference = types.reference(type);
+
+  const union = types.union(type, reference)
+  NODES.set(name, union)
+}
+
+const typeFromId = (id) => {
+  let parts = id.split(':')
+  let last = parts.pop()
+  let type = last.split('-')[0]
+  return type
+}
+
+const Any = types.union((snapshot) => {
+  switch(typeof snapshot){
+    case 'string': return NODES.get(snapshot.split('__')[1]) || types.string
+    case 'number': return types.number
+    case 'boolean': return types.boolean
+    case 'undefined': return types.undefined
+    case 'object' : {
+      if (!snapshot) return types.null
+      if (Array.isArray(snapshot)) return AnyArray
+      if (snapshot.type && NODES.has(snapshot.type)) return NODES.get(snapshot.type)
+      throw new Error(`unknown object:\n${json_stringify(snapshot)}`)
+    }
+    default : throw new Error(`invalid snapshot<${typeof snapshot}> :\n${json_stringify(snapshot)}`)
+  }
+})
+
+const AnyArray = types.array(Any)
+const AnyMap = types.map(Any)
+
+window.Define = Define
+window.Any = Any
+window.getSnapshot = getSnapshot
+window.AnyMap = types.map(Any)
+
+const any = types.late(() => types.union(booklet, section, section_scaffold, static_page, essay, factory))
 const _any = types.union((id) => {
   if (!id) return types.undefined;  
+  console.log(id);
   let parts = id.split(':');
   let last = parts.pop()
   let type = last.split('-')[0]
@@ -142,8 +250,9 @@ const section = node.named('section').props({
       Object.assign(node, obj);
     }
     console.log(node)
+    console.log("add Node");
     node = self._booklet.addNode(node);
-    //console.log("add to children", node.type)
+    console.log("add to children", node.type)
     self.children.splice(offset, 0, node.id);
     return node
   },
@@ -151,13 +260,13 @@ const section = node.named('section').props({
     parent = parent || self._booklet
     let {type, title, children} = node
     
-    if (type === `section`){
-      console.log("create?", title)
+    if (type === `section` || type === `section_scaffold`){
+      console.log("create?", type, children)
       node = self._booklet.createChild({
         type,
         title
       })
-      children.forEach((next) => processNode(next, node))
+      children.forEach((next) => self.fromScaffold(next, node))
     } else {
       parent.createChild(node)
     }
@@ -207,20 +316,11 @@ const booklet = section.named('booklet').props({
   }
 }))
 
-const processNode = (node, parent) => {
-  let {type, title, children} = node
-  
-  if (type === `section`){
-    console.log("create?", title)
-    node = parent.createChild({
-      type,
-      title
-    })
-    children.forEach((next) => processNode(next, node))
-  } else {
-    parent.createChild(node)
-  }
-} 
+const section_scaffold = section.named('section_scaffold').props({
+  type : types.literal('section_scaffold'),
+  children : types.array(any)
+})
+
 
 const createBooklet = ({id, title, type, children}) => {
   let _booklet = booklet.create({ id, type, _menuSelected : id, title, nodes : [], _booklet : id })
@@ -353,7 +453,7 @@ const factory = node.named('factory').props({
   prompt,
   title_note,
   template : essay,
-  appendix_template : section
+  appendix_template : section_scaffold
 }).actions(self => ({
   createEssay(){
     console.log(self)
@@ -366,7 +466,7 @@ const factory = node.named('factory').props({
     console.log(self.appendix_template);
     self._section._section.children[self._section._section.children.length - 1].fromScaffold(Object.assign({
       ref : essay.id,
-    }, self.appendix_template))
+    }, self.appendix_template), self._section._section)
 
   }
 }))
