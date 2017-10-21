@@ -4,33 +4,38 @@ import json_stringify from 'safe-json-stringify'
 
 const NODES = new Map()
 const noop = () => ({})
+window.nodes = NODES
 
-const Define = (name, props = noop, views = noop, actions = noop, superType = node) => {
+
+const Define = (name, props = noop, views = noop, actions = noop, ...mixins) => {
   if (!name) throw new Error(`node required`)
   if (NODES.has(name)) throw new Error(`already have type ${name}`)
 
-  const type = superType.named(name).props({
-    type : name,
-    nodes : types.maybe(AnyMap),
+  mixins.push(node.props({
     id : types.optional(types.identifier(), () => `__${name}__${uuid4()}`),
+    type : name,
     ...props
-  }).views(views).actions(actions).actions(self => {
+  }).views(views).views(self => ({
+
+  })).actions(actions).actions(self => {
     let oldAfterCreate = self.afterCreate || noop
     return ({
       afterCreate(){
         oldAfterCreate()
 
         setImmediate(() => {
-          const _root = getRoot(self)
+          const _root = self._root
           if (_root === self || _root.nodes === self || _root.nodes === getParent(self)) return
 
           const parent = getParent(self)
           const propName = getRelativePath(parent, self).slice(1);
           if (parent.replaceWithReference) {
+            self.set('parent', parent.id)
             parent.replaceWithReference(propName)
           } else if (parent.constructor.name === 'ObservableArray'){
             const grandparent = getParent(parent)
             const arrayPropName = getRelativePath(grandparent, parent).slice(1)
+            self.set('parent', grandparent.id)
             grandparent.replaceArrayMemberWithReference(arrayPropName, Number.parseInt(propName))
           } else {
             console.warn(`don't know what's going on here, expected property or array`)
@@ -41,39 +46,47 @@ const Define = (name, props = noop, views = noop, actions = noop, superType = no
       set(propName, value){
         self[propName] = value;
       },
-      addNode(node){
+      addNode(node, parentId){
         if (!isRoot(self)) throw new Error(`nodes must be added to root only (cwd : ${getPath(self)}):\n${getSnapshot(node)}`);
         if (!self.nodes) self.nodes = {}
+        console.log(node, isStateTreeNode(node))
         if (isStateTreeNode(node)) node = getSnapshot(node)
+        console.log(self.nodes)
         self.nodes.set(node.id, node)
-      },
-      clone(){
-
       },
       replaceWithReference(propName){
         const node = self[propName]
         detach(self[propName])
-        getRoot(self).addNode(node)
+        getRoot(self).addNode(node, self.id)
         self[propName] = node.id
       },
       replaceArrayMemberWithReference(propName, index){
         const node = self[propName][index]
         detach(self[propName][index])
         console.log("new array", getSnapshot(self[propName]))
-        getRoot(self).addNode(node)
-
+        getRoot(self).addNode(node, self.id)
         self[propName].splice(index, 0, node.id)
+      },
+      clone(){
+
       },
       deepClone(){
 
       }
     })
-  })
+  }))
+
+  const type = types.compose.apply(types, mixins).named(name)
 
   const reference = types.reference(type);
 
   const union = types.union(type, reference)
   NODES.set(name, union)
+}
+
+const GetDefinition = (name) => {
+  if (!NODES.has(name)) throw new Error(`no node type '${name}'`)
+  return NODES.get(name)[1]
 }
 
 const typeFromId = (id) => {
@@ -107,276 +120,180 @@ window.Any = Any
 window.getSnapshot = getSnapshot
 window.AnyMap = types.map(Any)
 
-const any = types.late(() => types.union(booklet, section, section_scaffold, static_page, essay, factory))
-const _any = types.union((id) => {
-  if (!id) return types.undefined;  
-  console.log(id);
-  let parts = id.split(':');
-  let last = parts.pop()
-  let type = last.split('-')[0]
-  switch(type){
-    case 'factory': return _factory;
-    case 'booklet': return _booklet;
-    case 'section': return _section;
-    case 'static_page' : return _static_page;
-    case 'essay' : return _essay;
-    default:
-    throw new Error(`type ${type} not in reference dispatcher`)
-  }
-})
-
 const ids = () => (((1+Math.random())*0x10000)|0).toString(16).substring(1)
 
 const id = types.optional(types.identifier(types.string), () => ids())
 
 const title = types.maybe(types.string)
 
-const _section = types.late(() => types.maybe(types.reference(section)))
-const _booklet = types.maybe(types.late(() => types.reference(booklet)))
-
-const node = types.model('node',{
-  id,
-  _section,
-  _booklet,
-  title
+const node = types.model('node').props({
+  nodes : types.maybe(AnyMap),
+  parent : Any,
+  focused : Any
 }).actions(self => ({
   onMenuSelect(){
     self._booklet.onMenuSelect(self.id)
   }
 })).views(self => ({
-  get depth(){
-    if (self === self._booklet) return 1
-    let depth = 2;
-    let next = self._section;
-    while (next && next !== self){
-      depth++
-      next = next._section
-    }
-    console.log(self.id,"depth", depth)
-    return depth
+  get _index(){
+    if (self.isRoot || !self.parent.items) return -1;
+    return self.parent.items.indexOf(self);
   },
-  get menuIconStyle(){
-    return ({ width : `${self.depth}em`, paddingLeft : `${(self.depth - 1)}em` });
-  },
-  get menuIcon(){
-    return 'md-circle'
-  },
-  get menuBackground(){
-    if (self.isSelected){
-      console.log(self.id, "grey")
-      return "#CCC"
-    }
-    console.log(self.id,"white")
-    return "white"
-  },
-  get currentSelected(){
-    return self._booklet.menuSelected
-  },
-  get siblingIndex(){
-    if (!self._section) return -1;
-    return self._section.children.indexOf(self);
+  get _root(){ 
+    return getRoot(self) 
   },
   get isRoot(){
-    return !self._section
+    return self._root === self
   },
-  get isSelected(){
-    return self.currentSelected === self
+  get _focus(){
+    return (self.parent && self.parent.focus) || noop
   },
-  get isAncestorOfSelected(){
-    let next = self.currentSelected._section;
-    while (next){
-      if (next === self) return true
-      next = next._section
-    }
-    return false;
+  get focus(){
+    return (id) => (self.focused = id) && self._focus(self.id)
   },
-  get isChildOfSelected(){
-    console.log(self.id, self.currentSelected, self.currentSelected._section === self)
-    return (self.currentSelected === self._section)
+  get _unFocus(){
+    return (self.parent && self.parent.unFocus) || noop
   },
-  get isYoungerSiblingOfSelected(){
-    let currentSelected = self.currentSelected
-    let selectedParent = currentSelected._section
-
-    return self._section === selectedParent && self.siblingIndex >= currentSelected.siblingIndex 
+  get unFocus(){
+    return () => {(self.focused = undefined); self._unFocus()}
   },
-  get menuIsOpen(){
-    return self.isRoot || self.isSelected || self.isAncestorOfSelected || self.isChildOfSelected || self.isYoungerSiblingOfSelected
+  get depth(){
+    let depth = 0
+    let parent = self.parent
+    while (parent) ++depth && (parent = parent.parent)
+    return depth
+  },
+  get deepFocused(){
+    let focused = self.focused
+    while (focused && focused.focused) focused = focused.focused
+    return focused
+  },
+  get isFocused(){
+    return self.isRoot || self.parent.focused === self
+  },
+  get isChildOfFocused(){
+    return self.isRoot || self.parent.isFocused
+  },
+  get isYoungerSiblingOfFocused(){
+    return self.isRoot || self.parent.focused && self.parent.focused._index < self._index
   }
 }))
 
-const type = types.literal('section')
+Define(
+  'section', 
+  {children : AnyArray}, 
+  (self) => ({
+    get menuIcon(){
+      if (self.isSelected || self.isAncestorOfSelected){
+        return 'md-chevron-down'
+      } else {
+        return 'md-chevron-right'
+      }
+    },
 
-const children = types.optional(types.array(_any), [])
-
-const section = node.named('section').props({
-  type,
-  children
-}).views(self => ({
-  get menuIcon(){
-    if (self.isSelected || self.isAncestorOfSelected){
-      return 'md-chevron-down'
-    } else {
-      return 'md-chevron-right'
+  }),
+  (self) => ({
+    createChild(obj, offset){
+      offset = offset ? offset < 0 ? (self.children.length + offset - 1) : offset : self.children.length
+      let node = {
+        id : `${self.id}:${obj.type}-${ids()}`,
+        type : obj.type,
+        title : obj.title,
+        _booklet : self._booklet.id,
+        _section : self.id !== self._booklet.id ? self.id : null
+      }
+      if (obj.type !== 'section'){
+        Object.assign(node, obj);
+      }
+      console.log(node)
+      console.log("add Node");
+      node = self._booklet.addNode(node);
+      console.log("add to children", node.type)
+      self.children.splice(offset, 0, node.id);
+      return node
+    },
+    fromScaffold(node, parent){
+      parent = parent || self._booklet
+      let {type, title, children} = node
+      
+      if (type === `section` || type === `section_scaffold`){
+        console.log("create?", type, children)
+        node = self._booklet.createChild({
+          type,
+          title
+        })
+        children.forEach((next) => self.fromScaffold(next, node))
+      } else {
+        parent.createChild(node)
+      }
     }
-  },
+  })
+)
 
-  get lineage(){
-    return [self].concat(self.children.reduce(this.childReducer, []))
+Define(
+  'booklet',
+  {
+    type : types.literal('booklet'),
+    _menuOpen : false
   },
-
-  get posterity(){
-    return self.lineage.filter(node => !node.lineage)
-  },
-
-  childReducer(items, node){
-    if (node.lineage){
-      return items.concat(node.lineage);
-    } else {
-      return items.concat([node]);
+  (self) => ({
+    get viewPage(){
+      let index = self.lineage.indexOf(self.menuSelected);
+      while(self.lineage[index].lineage) index++
+      return self.lineage[index]
+    },
+    get viewIndex(){
+      return self.posterity.indexOf(self.viewPage)
     }
+  }),
+  (self) => ({
+    addNode(obj){
+      self.nodes.push(obj)
+      return self.nodes[self.nodes.length - 1]
+    },
+    onMenuSelect(id){
+      self._menuSelected = id;
+    },
+    onViewOverscroll(){
+  
+    },
+    onViewPostChange(evt){
+      let id = self.posterity[evt.activeIndex].id
+      self.onMenuSelect(id)
+    },
+    showMenu(){
+      self._menuOpen = true;
+    },
+    hideMenu(){
+      self._menuOpen = false;
+    }
+  }),
+  GetDefinition('section')
+)
+
+const lineageReducer = (items, node) => {
+  if (node.lineage){
+    return items.concat(node.lineage);
+  } else {
+    return items.concat([node]);
   }
-})).actions((self) => ({
-  createChild(obj, offset){
-    offset = offset ? offset < 0 ? (self.children.length + offset - 1) : offset : self.children.length
-    let node = {
-      id : `${self.id}:${obj.type}-${ids()}`,
-      type : obj.type,
-      title : obj.title,
-      _booklet : self._booklet.id,
-      _section : self.id !== self._booklet.id ? self.id : null
-    }
-    if (obj.type !== 'section'){
-      Object.assign(node, obj);
-    }
-    console.log(node)
-    console.log("add Node");
-    node = self._booklet.addNode(node);
-    console.log("add to children", node.type)
-    self.children.splice(offset, 0, node.id);
-    return node
-  },
-  fromScaffold(node, parent){
-    parent = parent || self._booklet
-    let {type, title, children} = node
-    
-    if (type === `section` || type === `section_scaffold`){
-      console.log("create?", type, children)
-      node = self._booklet.createChild({
-        type,
-        title
-      })
-      children.forEach((next) => self.fromScaffold(next, node))
-    } else {
-      parent.createChild(node)
-    }
-  }
-}))
-
-
-const nodes = types.array(any)
-
-const booklet = section.named('booklet').props({
-  type : types.literal('booklet'),
-  _menuSelected : _any,
-  _menuOpen : false,
-  nodes
-}).views(self => ({
-  get menuSelected(){
-    return self._menuSelected || self
-  },
-  get viewPage(){
-    let index = self.lineage.indexOf(self.menuSelected);
-    while(self.lineage[index].lineage) index++
-    return self.lineage[index]
-  },
-  get viewIndex(){
-    return self.posterity.indexOf(self.viewPage)
-  }
-})).actions(self => ({
-  addNode(obj){
-    self.nodes.push(obj)
-    return self.nodes[self.nodes.length - 1]
-  },
-  onMenuSelect(id){
-    self._menuSelected = id;
-  },
-  onViewOverscroll(){
-
-  },
-  onViewPostChange(evt){
-    let id = self.posterity[evt.activeIndex].id
-    self.onMenuSelect(id)
-  },
-  showMenu(){
-    self._menuOpen = true;
-  },
-  hideMenu(){
-    self._menuOpen = false;
-  }
-}))
-
-const section_scaffold = section.named('section_scaffold').props({
-  type : types.literal('section_scaffold'),
-  children : types.array(any)
-})
-
-
-const createBooklet = ({id, title, type, children}) => {
-  let _booklet = booklet.create({ id, type, _menuSelected : id, title, nodes : [], _booklet : id })
-  children.forEach(_booklet.fromScaffold)
-  console.log(_booklet.lineage)
-  return _booklet
 }
 
-const value = '';
-const placeholder = 'Start writing...';
-const _essay = types.late(() => types.reference(essay))
-
-const note = node.named('note').props({
-  value,
-  placeholder
-}).views(self => ({
-  get _essay(){
-    return getParent(self, 2)
-  },
-  get isEditing(){
-    console.log("isEditing")
-    return (self._essay.editing === self.id)
-  },
-  get isOpen(){
-    let essay = self._essay
-    let editing = essay.editing;
-
-    return (!editing || editing === self)
-  }
-})).actions(self => ({
-  afterCreate(){
-    console.log("note created", self.isOpen);
-  },
-  onEdit(){
-    console.log("onEdit")
-    self._essay.onEdit(self)
-  },
-  onChange(value){
-    self.value = value
-  },
-  onConfirm(){
-    console.log("onConfirm")
-    self._essay.onEdit(null)
-    self._essay.maybeCreateNote()
-  }
-}))
-
-const static_page = node.named('static_page').props({
-  type : types.literal('static_page'),
-  text : types.optional(types.array(types.string), [])
-})
-
-const _static_page = types.reference(static_page)
-
-const notes = types.optional(types.array(note), []);
-
+Define(
+  'collection',
+  {
+    items : AnyArray
+  }, 
+  (self) => ({   
+    get lineage(){
+      return [self].concat(self.items.reduce(lineageReducer, []))
+    },
+    get posterity(){
+      return self.lineage.filter(node => !node.lineage)
+    }
+  })
+)
+/*
 const prompt = types.optional(types.string, '')
 
 const cues = types.optional(types.array(types.string), [])
@@ -472,5 +389,5 @@ const factory = node.named('factory').props({
 }))
 
 const _factory = types.reference(factory)
-
-export {node, any, _any, booklet, _booklet, section, _section, createBooklet, factory}
+*/
+export {Define, GetDefinition, Any}

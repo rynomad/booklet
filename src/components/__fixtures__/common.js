@@ -70,7 +70,7 @@ const bk = createBooklet({
                 ]
               },
               appendix_template : {
-                type : 'section',
+                type : 'section_scaffold',
                 children : []
               }
             }
