@@ -7,7 +7,7 @@ const noop = () => ({})
 window.nodes = NODES
 
 
-const Define = (name, props = noop, views = noop, actions = noop, ...mixins) => {
+const Define = ({name, props = {}, views = noop, actions = noop, mixins = []}) => {
   if (!name) throw new Error(`node required`)
   if (NODES.has(name)) throw new Error(`already have type ${name}`)
   mixins = mixins.map(name => NODES.get(name).types[1])
@@ -17,31 +17,19 @@ const Define = (name, props = noop, views = noop, actions = noop, ...mixins) => 
     type : name,
     nodes : types.maybe(AnyMap),
     ...props
-  }).actions(actions).actions(self => {
+  }).views(views).actions(actions).actions(self => {
     let oldAfterCreate = self.afterCreate || noop
     return ({
-      afterCreate(){
-        oldAfterCreate()
+      afterAttach(){
+        const _root = self._root
+        if (_root === self || _root.nodes === self || _root.nodes === getParent(self)) return
 
-        setImmediate(() => {
-          const _root = self._root
-          if (_root === self || _root.nodes === self || _root.nodes === getParent(self)) return
-
-          const parent = getParent(self)
-          const propName = getRelativePath(parent, self).slice(1);
-          if (parent.replaceWithReference) {
-            self.set('parent', parent.id)
-            parent.replaceWithReference(propName)
-          } else if (parent.constructor.name === 'ObservableArray'){
-            const grandparent = getParent(parent)
-            const arrayPropName = getRelativePath(grandparent, parent).slice(1)
-            self.set('parent', grandparent.id)
-            grandparent.replaceArrayMemberWithReference(arrayPropName, Number.parseInt(propName, 10))
-          } else {
-            console.warn(`don't know what's going on here, expected property or array`)
-            console.warn(`parent : \n${json_stringify(getSnapshot(parent))}`)
-          }
-        })
+        const parent = getParent(self)
+        const propName = getRelativePath(parent, self).slice(1);
+        if (parent.replaceWithReference) {
+          self.set('parent', parent.id)
+          parent.replaceWithReference(propName)
+        } 
       },
       set(propName, value){
         self[propName] = value;
@@ -49,9 +37,7 @@ const Define = (name, props = noop, views = noop, actions = noop, ...mixins) => 
       addNode(node, parentId){
         if (!isRoot(self)) throw new Error(`nodes must be added to root only (cwd : ${getPath(self)}):\n${getSnapshot(node)}`);
         if (!self.nodes) self.nodes = {}
-        console.log(node, isStateTreeNode(node))
         if (isStateTreeNode(node)) node = getSnapshot(node)
-        console.log(self.nodes)
         self.nodes.set(node.id, node)
       },
       replaceWithReference(propName){
@@ -61,9 +47,9 @@ const Define = (name, props = noop, views = noop, actions = noop, ...mixins) => 
         self[propName] = node.id
       },
       replaceArrayMemberWithReference(propName, index){
+        if (typeof getSnapshot(self[propName]) === 'string') return // already a reference
         const node = self[propName][index]
         detach(self[propName][index])
-        console.log("new array", getSnapshot(self[propName]))
         getRoot(self).addNode(node, self.id)
         self[propName].splice(index, 0, node.id)
       },
@@ -99,7 +85,7 @@ const Any = types.union((snapshot) => {
       if (!snapshot) return types.null
       if (Array.isArray(snapshot)) return AnyArray
       if (snapshot.type && NODES.has(snapshot.type)) return NODES.get(snapshot.type)
-      throw new Error(`unknown object:\n${json_stringify(snapshot)}`)
+      throw new Error(`unknown object:\n${json_stringify(snapshot, null, 4)}`)
     }
     default : throw new Error(`invalid snapshot<${typeof snapshot}> :\n${json_stringify(snapshot)}`)
   }
@@ -119,7 +105,6 @@ const node = types.model('node').props({
 }).views(self => ({
   get _index(){
     if (self.isRoot || !self.parent.items) return -1;
-    console.log(self.parent.items)
     return self.parent.items.indexOf(self);
   },
   get _root(){ 
@@ -143,7 +128,7 @@ const node = types.model('node').props({
   get depth(){
     let depth = 0
     let parent = self.parent
-    while (parent) ++depth && (parent = parent.parent)
+    while (parent && parent.parent != parent) ++depth && (parent = parent.parent) && console.log(parent)
     return depth
   },
   get deepFocused(){
@@ -162,12 +147,15 @@ const node = types.model('node').props({
   }
 }))
 
-Define(
-  'collection',
-  {
+
+
+Define({
+  name : 'collection',
+  props : {
+    title : types.maybe(types.string),
     items : types.optional(AnyArray,[])
   }, 
-  self => ({   
+  views : self => ({   
     get lineage(){
       return [self].concat(self.items.reduce((items, node) => {
         if (node.lineage){
@@ -181,13 +169,19 @@ Define(
       return self.lineage.filter(node => !node.lineage)
     }
   }),
-  self => ({
+  actions : self => ({
+    afterCreate(){
+      for (let i = 0; i < self.items.length ; i++) self.replaceArrayMemberWithReference('items', i)
+    },
     insert(item, index = 0){
       if (index < 0) index += self.items.length
 
       const insert = (typeof item === 'string') ? item : isStateTreeNode(node) ? item.id : item
       self.items.unshift(insert)
-      setImmediate(() => self.move(0, index))
+      self.move(0, index)
+      if (!isStateTreeNode(node)){
+        self.replaceArrayMemberWithReference('items', index)
+      }
     },
     delete(item){
       self.items.splice(item._index, 1)
@@ -200,48 +194,55 @@ Define(
       self.items.splice(index, 0, self.items.splice(item._index, 0))
     }
   })
-)
+})
 
-Define(
-  'menuItem',
-  {
+Define({
+  name : 'menuItem',
+  props : {
     _isMenuItem : types.optional(types.literal(true), true),
   },
-  self => ({
+  views : self => ({
     get isSelectedInMenu(){
       if (!self._root.menu || self._root.menu.type !== 'menu') throw new Error('no menu on root')
       return self._root.menu.selected === self
     },
     get isOpenInMenu(){
-      return self.isFocused || self.isYoungerSiblingOfFocused
+      return self.isFocused || self.isChildOfFocused || self.isYoungerSiblingOfFocused
+    }
+  }),
+  actions : self => ({
+    selectInMenu(){
+      if (!self._root.menu || self._root.menu.type !== 'menu') throw new Error('no menu on root')
+      self._root.menu.onSelect(self)
     }
   })
-)
+})
 
-Define(
-  'viewportItem',
-  {
+Define({
+  name : 'viewportItem',
+  props : {
     _isViewportItem : types.optional(types.literal(true), true)
   },
-  undefined,
-  undefined,
-  'menuItem'
-)
+  mixins : ['menuItem']
+})
 
-Define(
-  'menu', 
-  {
+Define({
+  name : 'menu', 
+  props : {
     open : false,
     selected : Any
   },
-  self => ({
+  views : self => ({
     get items(){
-      if (!self.parent) throw new Error('menu has no parent to get items from')
-      if (!self.parent.lineage) throw new Error('menu parent has no lineage')
+      console.log('get items')
+      if (!(self.parent && !self.parent.lineage)) {
+        console.warn('no or invalid parent')
+        return []
+      }
       return self.parent.lineage.filter(item => item._isMenuItem)
     }
   }),
-  self => ({
+  actions : self => ({
     open(){
       self.open = true
     },
@@ -253,14 +254,14 @@ Define(
       if (node._isViewportItem) self.close()
     }
   })
-)
+})
 
-Define(
-  'viewport',
-  {
+Define({
+  name : 'viewport',
+  props : {
     selected : Any
   },
-  self => ({
+  views : self => ({
     get items(){
       if (!self.parent) throw new Error('viewport has no parent to get items from')
       if (!self.parent.lineage) throw new Error('viewport parent has no lineage')
@@ -271,7 +272,7 @@ Define(
       return self.items.indexOf(self.selected)
     }
   }),
-  self => ({
+  actions : self => ({
     goItem(item){
       self.selected = item.id
     },
@@ -285,27 +286,73 @@ Define(
       self.goIndex(self.activeIndex + 1)
     }
   })
-)
+})
 
-Define(
-  'booklet',
-  {
+Define({
+  name : 'booklet',
+  props : {
     type : types.literal('booklet'),
     menu : types.maybe(GetDefinition('menu')),
     viewport : types.maybe(GetDefinition('viewport'))
   },
-  undefined,
-  self => ({
+  actions : self => ({
     afterCreate(){
       if (!self.menu) self.menu = {type : 'menu'}
       if (!self.viewport) self.viewport  = {type : 'viewport'}
     }
   }),
-  'collection',
-  'menuItem'
-)
+  mixins : ['collection', 'menuItem']
+})
 
+Define({
+  name : '_input',
+  props : {
+    prompt : types.string,
+    value : Any
+  },
+  actions : self => ({
+    onEdit(){
+      self.focus()
+    },
+    onConfirm(){
+      self.unFocus()
+    },
+    onChange(value){
+      self.value = value
+    },
+  })
+})
 
+Define({
+  name : 'page',
+  views : self => ({
+    get unFocus(){
+      self.focused = undefined
+    }
+  }),
+  mixins : ['collection','menuItem','viewportItem']
+})
+
+Define({
+  name : 'section',
+  mixins : ['collection','menuItem']
+})
+
+Define({
+  name : 'text',
+  props : {
+    value : types.string
+  }
+})
+
+Define({
+  name : 'text_input',
+  props : {
+    prompt : types.string,
+    placeholder : ''
+  },
+  mixins : ['_input']
+})
 
 
 /*

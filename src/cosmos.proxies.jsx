@@ -1,6 +1,6 @@
 import React from 'react';
 import proxyPropTypes from 'react-cosmos-utils/lib/proxy-prop-types';
-import {any} from './stores/booklet'
+import {Any} from './stores/booklet'
 import {Page} from 'react-onsenui'
 
 import 'onsenui/css/onsenui.css'
@@ -10,7 +10,9 @@ import '@blueprintjs/core/dist/blueprint.css'
 const MobxProxy = props => {
   console.log(props)
   const { value: NextProxy, next } = props.nextProxy;
-  props.fixture.props = {store : any.create(props.fixture._store)};
+  let store = window.store = Any.create(props.fixture._store)
+  //if (props.fixture._prop) store = store[props.fixture._prop]
+  props.fixture.props = {store};
   return (<NextProxy {...props} nextProxy={next()}/>)
 };
 
