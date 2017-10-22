@@ -119,6 +119,7 @@ const node = types.model('node').props({
 }).views(self => ({
   get _index(){
     if (self.isRoot || !self.parent.items) return -1;
+    console.log(self.parent.items)
     return self.parent.items.indexOf(self);
   },
   get _root(){ 
@@ -164,7 +165,7 @@ const node = types.model('node').props({
 Define(
   'collection',
   {
-    items : AnyArray
+    items : types.optional(AnyArray,[])
   }, 
   self => ({   
     get lineage(){
@@ -186,14 +187,15 @@ Define(
 
       const insert = (typeof item === 'string') ? item : isStateTreeNode(node) ? item.id : item
       self.items.unshift(insert)
-      self.move(0, index)
+      setImmediate(() => self.move(0, index))
     },
     delete(item){
       self.items.splice(item._index, 1)
     },
     move(itemOrIndex, index){
+      if (index === itemOrIndex) return
       if (index < 0) index += self.items.length
-      if (0 <= index && index < self.items.length) throw new Error('index out of bounds')
+      if (!(0 <= index && index < self.items.length)) throw new Error('index out of bounds')
       const item = (typeof itemOrIndex === 'number') ? self.items[itemOrIndex] : itemOrIndex
       self.items.splice(index, 0, self.items.splice(item._index, 0))
     }
@@ -285,43 +287,22 @@ Define(
   })
 )
 
-
-
 Define(
   'booklet',
   {
     type : types.literal('booklet'),
-    _menuOpen : false,
-    _menuSelected : Any
+    menu : types.maybe(GetDefinition('menu')),
+    viewport : types.maybe(GetDefinition('viewport'))
   },
-  (self) => ({
-    get menuItems(){
-
-    },
-    get viewPage(){
-      let index = self.lineage.indexOf(self.menuSelected);
-      while(self.lineage[index].lineage) index++
-      return self.lineage[index]
-    },
-    get viewIndex(){
-      return self.posterity.indexOf(self.viewPage)
+  undefined,
+  self => ({
+    afterCreate(){
+      if (!self.menu) self.menu = {type : 'menu'}
+      if (!self.viewport) self.viewport  = {type : 'viewport'}
     }
   }),
-  (self) => ({
-    onMenuSelect(id){
-      self._menuSelected = id;
-    },
-    onViewPostChange(evt){
-      self.onMenuSelect(self.posterity[evt.activeIndex].id)
-    },
-    showMenu(){
-      self._menuOpen = true;
-    },
-    hideMenu(){
-      self._menuOpen = false;
-    }
-  }),
-  'collection'
+  'collection',
+  'menuItem'
 )
 
 
