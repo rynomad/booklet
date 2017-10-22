@@ -1,4 +1,4 @@
-import {types, getParent, getSnapshot, getRelativePath, isRoot, detach, getPath, getRoot, getType, isStateTreeNode} from 'mobx-state-tree'
+import {types, getParent, getSnapshot, getRelativePath, isRoot, detach, getPath, getRoot, getType, isStateTreeNode, walk} from 'mobx-state-tree'
 import uuid4 from 'uuid/v4'
 import json_stringify from 'safe-json-stringify'
 
@@ -15,43 +15,44 @@ const Define = ({name, props = {}, views = noop, actions = noop, mixins = []}) =
   mixins.push(node.props({
     id : types.optional(types.identifier(), () => `${name}/${uuid4()}`),
     type : name,
-    nodes : types.maybe(AnyMap),
     ...props
-  }).views(views).actions(actions).actions(self => {
-    let oldAfterCreate = self.afterCreate || noop
+  }).views(views).views(self => ({
+    get observablePropNames(){
+      return Object.keys(self.$mobx.values).map(v => self.$mobx.values[v]).filter(val => val.constructor.name === 'ObservableValue').map(v => v.name.split('.')[1])
+    },
+    get observableProps(){
+      return self.observablePropNames.map(v => self[v])
+    }
+  })).actions(actions).actions(self => {
+    const oldAttachToChildren = self.attachToChildren || noop
+    const oldReplaceChildrenWithReferences = self.replaceChildrenWithReferences || noop 
     return ({
-      afterAttach(){
+      afterCreate(){
         const _root = self._root
-        if (_root === self || _root.nodes === self || _root.nodes === getParent(self)) return
 
-        const parent = getParent(self)
-        const propName = getRelativePath(parent, self).slice(1);
-        if (parent.replaceWithReference) {
-          self.set('parent', parent.id)
-          parent.replaceWithReference(propName)
-        } 
       },
-      set(propName, value){
+      attachToChildren(){
+        self.observableProps.forEach((node) => {
+          if (node && node.setProp) node.setProp('parent', self.id)
+        })
+        oldAttachToChildren()
+      },
+      setProp(propName, value){
         self[propName] = value;
       },
-      addNode(node, parentId){
-        if (!isRoot(self)) throw new Error(`nodes must be added to root only (cwd : ${getPath(self)}):\n${getSnapshot(node)}`);
-        if (!self.nodes) self.nodes = {}
-        if (isStateTreeNode(node)) node = getSnapshot(node)
-        self.nodes.set(node.id, node)
+      replaceChildrenWithReferences(){
+        self.observablePropNames.forEach((propName) => {
+          if (self[propName] && self[propName].id) self.replaceChildWithReference(propName)
+        })
+        oldReplaceChildrenWithReferences()
       },
-      replaceWithReference(propName){
+
+      replaceChildWithReference(propName){
         const node = self[propName]
         detach(self[propName])
+        console.log(getRoot(self))
         getRoot(self).addNode(node, self.id)
         self[propName] = node.id
-      },
-      replaceArrayMemberWithReference(propName, index){
-        if (typeof getSnapshot(self[propName]) === 'string') return // already a reference
-        const node = self[propName][index]
-        detach(self[propName][index])
-        getRoot(self).addNode(node, self.id)
-        self[propName].splice(index, 0, node.id)
       },
       clone(){
 
@@ -165,13 +166,16 @@ Define({
         }
       }, []))
     },
+    get snapshot(){
+      return getSnapshot(self)
+    },
     get posterity(){
       return self.lineage.filter(node => !node.lineage)
     }
   }),
   actions : self => ({
     afterCreate(){
-      for (let i = 0; i < self.items.length ; i++) self.replaceArrayMemberWithReference('items', i)
+      //for (let i = 0; i < self.items.length ; i++) self.replaceArrayMemberWithReference('items', i)
     },
     insert(item, index = 0){
       if (index < 0) index += self.items.length
@@ -182,6 +186,26 @@ Define({
       if (!isStateTreeNode(node)){
         self.replaceArrayMemberWithReference('items', index)
       }
+    },
+    attachToChildren(){
+      //console.log("observable?",Object.keys(self.$mobx.values).map(v => self.$mobx.values[v]))
+      self.items.forEach((node) => {
+        if (node.setProp) node.setProp('parent', self.id)
+        else console.log('no .set', node)
+      })
+    },
+    replaceChildrenWithReferences(){
+      self.items.forEach((node, index) => {
+        console.log('here', node)
+        if (node.id) self.replaceItemWithReference(index)
+      })
+    },
+    replaceItemWithReference(index){
+      if (typeof self.snapshot.items[index] === 'string') return // already a reference
+      let node = getSnapshot(self.items[index])
+      detach(self.items[index])
+      getRoot(self).addNode(node, self.id)
+      self.items.splice(index, 0, node.id)
     },
     delete(item){
       self.items.splice(item._index, 1)
@@ -293,12 +317,26 @@ Define({
   props : {
     type : types.literal('booklet'),
     menu : types.maybe(GetDefinition('menu')),
-    viewport : types.maybe(GetDefinition('viewport'))
+    viewport : types.maybe(GetDefinition('viewport')),
+    nodes : types.optional(AnyMap, {})
   },
   actions : self => ({
     afterCreate(){
       if (!self.menu) self.menu = {type : 'menu'}
       if (!self.viewport) self.viewport  = {type : 'viewport'}
+      console.log('booklet afterCreate')
+      walk(self, node => {
+        if (node.attachToChildren) node.attachToChildren()
+      })
+      walk(self, node => {
+        if (node.replaceChildrenWithReferences) node.replaceChildrenWithReferences()
+      })
+      console.log(self, getSnapshot(self))
+    },
+    addNode(node, parentId){
+      if (!isRoot(self)) throw new Error(`nodes must be added to root only (cwd : ${getPath(self)}):\n${getSnapshot(node)}`);
+      if (isStateTreeNode(node)) node = getSnapshot(node)
+      self.nodes.set(node.id, node)
     }
   }),
   mixins : ['collection', 'menuItem']
