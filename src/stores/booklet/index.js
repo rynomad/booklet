@@ -341,7 +341,7 @@ Define({
         if (node.replaceChildrenWithReferences) node.replaceChildrenWithReferences()
         if (node.replaceItemsWithReferences) node.replaceItemsWithReferences()
       })
-      console.log(self.menu, self.items[0].deepClone())
+      console.log(self, getSnapshot(self))
     }
 
   }),
