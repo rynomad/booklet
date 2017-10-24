@@ -18,8 +18,7 @@ const MenuItem = observer(({store, id}) => (
 ))
 
 const Menu = observer(({store}) => {
-  return (<div/>)
-  //console.log(store.menu.parent)
+  console.log(store)
   return <List
     dataSource={store.menu.items}
     renderRow={(store, index) => (<MenuItem store={store} key={index} id={index}/>)}

@@ -16,62 +16,11 @@ const Define = ({name, props = {}, views = noop, actions = noop, mixins = []}) =
     id : types.optional(types.identifier(), () => `${name}/${uuid4()}`),
     type : name,
     ...props
-  }).views(views).views(self => ({
-    get observablePropNames(){
-      return Object.keys(self.$mobx.values).map(v => self.$mobx.values[v]).filter(val => val.constructor.name === 'ObservableValue').map(v => v.name.split('.')[1])
-    },
-    get observableProps(){
-      return self.observablePropNames.map(v => self[v])
-    }
-  })).actions(actions).actions(self => {
-    const oldAttachToChildren = self.attachToChildren || noop
-    const oldReplaceChildrenWithReferences = self.replaceChildrenWithReferences || noop 
-    return ({
-      attachToChildren(){
-        self.observableProps.forEach((node) => {
-          if (node && node.setProp) node.setProp('parent', self.id)
-        })
-        oldAttachToChildren()
-      },
-      setProp(propName, value){
-        self[propName] = value;
-      },
-      replaceChildrenWithReferences(){
-        self.observablePropNames.forEach((propName) => {
-          if (self[propName] && self[propName].id) self.replaceChildWithReference(propName)
-        })
-      },
-      replaceChildWithReference(propName){
-        const node = self[propName]
-        detach(self[propName])
-        console.log(getRoot(self), self)
-        getRoot(self).addNode(node, self.id)
-        self[propName] = node.id
-      },
-      clone(){
-        const snapshot = JSON.parse(json_stringify(getSnapshot(self)))
-        snapshot.id = undefined
-        snapshot.parent = undefined
-        return snapshot
-      },
-      deepClone(){
-        const clone = self.clone()
-        self.observablePropNames.forEach((propName) => {
-          console.log(propName)
-          if (propName === 'parent' || !self[propName]) return
-          if ( self[propName].id) clone[propName] = self[propName].deepClone()
-          else if (self[propName].constructor.name === 'ObservableArray'){
-            clone[propName] = self[propName].map(item => item.deepClone())
-          }
-        })
-        return clone
-      }
-    })
-  }))
+  }).views(views).actions(actions))
 
   const type = types.compose.apply(types, mixins).named(name)
 
-  const reference = types.reference(type);
+  const reference = types.reference(type)
 
   const union = types.union(type, reference)
   NODES.set(name, union)
@@ -144,6 +93,7 @@ const node = types.model('node').props({
     return focused
   },
   get isFocused(){
+    console.log(self)
     return self.isRoot || self.parent.focused === self
   },
   get isChildOfFocused(){
@@ -151,6 +101,51 @@ const node = types.model('node').props({
   },
   get isYoungerSiblingOfFocused(){
     return self.isRoot || (self.parent.focused && self.parent.focused._index < self._index)
+  },
+  get observablePropNames(){
+    return Object.keys(self.$mobx.values).map(v => self.$mobx.values[v]).filter(val => val.constructor.name === 'ObservableValue').map(v => v.name.split('.')[1]).filter(p => p != 'parent')
+  },
+  get observableProps(){
+    return self.observablePropNames.map(v => self[v])
+  }
+})).actions(self => ({
+  attachToChildren(){
+    self.observableProps.forEach((node) => {
+      if (node && node.setProp) node.setProp('parent', self.id)
+    })
+  },
+  setProp(propName, value){
+    self[propName] = value
+  },
+  replaceChildrenWithReferences(){
+    self.observablePropNames.forEach((propName) => {
+      if (self[propName] && self[propName].id) self.replaceChildWithReference(propName)
+    })
+  },
+  replaceChildWithReference(propName){
+    const node = self[propName]
+    detach(self[propName])
+    console.log(node.id)
+    getRoot(self).addNode(node, self.id)
+    self[propName] = node.id
+  },
+  clone(){
+    const snapshot = JSON.parse(json_stringify(getSnapshot(self)))
+    snapshot.id = undefined
+    snapshot.parent = undefined
+    return snapshot
+  },
+  deepClone(){
+    const clone = self.clone()
+    self.observablePropNames.forEach((propName) => {
+      console.log(propName)
+      if (propName === 'parent' || !self[propName]) return
+      if ( self[propName].id) clone[propName] = self[propName].deepClone()
+      else if (self[propName].constructor.name === 'ObservableArray'){
+        clone[propName] = self[propName].map(item => item.deepClone())
+      }
+    })
+    return clone
   }
 }))
 
@@ -179,51 +174,53 @@ Define({
       return self.lineage.filter(node => !node.lineage)
     }
   }),
-  actions : self => ({
-    afterCreate(){
-      //for (let i = 0; i < self.items.length ; i++) self.replaceArrayMemberWithReference('items', i)
-    },
-    insert(item, index = 0){
-      if (index < 0) index += self.items.length
+  actions : self => {
+    return ({
+      afterCreate(){
+        //for (let i = 0; i < self.items.length ; i++) self.replaceArrayMemberWithReference('items', i)
+      },
+      insert(item, index = 0){
+        if (index < 0) index += self.items.length
 
-      const insert = (typeof item === 'string') ? item : isStateTreeNode(node) ? item.id : item
-      self.items.unshift(insert)
-      self.move(0, index)
-      if (!isStateTreeNode(node)){
-        self.replaceArrayMemberWithReference('items', index)
+        const insert = (typeof item === 'string') ? item : isStateTreeNode(node) ? item.id : item
+        self.items.unshift(insert)
+        self.move(0, index)
+        if (!isStateTreeNode(node)){
+          self.replaceArrayMemberWithReference('items', index)
+        }
+      },
+      _attachToChildren(){
+        //console.log("observable?",Object.keys(self.$mobx.values).map(v => self.$mobx.values[v]))
+        self.items.forEach((node) => {
+          if (node.setProp) node.setProp('parent', self.id)
+          else console.log('no .set', node)
+        })
+      },
+      _replaceChildrenWithReferences(){
+        self.items.forEach((node, index) => {
+          console.log('here', node)
+          if (node.id) self.replaceItemWithReference(index)
+        })
+      },
+      replaceItemWithReference(index){
+        if (typeof self.snapshot.items[index] === 'string') return // already a reference
+        let node = getSnapshot(self.items[index])
+        detach(self.items[index])
+        getRoot(self).addNode(node, self.id)
+        self.items.splice(index, 0, node.id)
+      },
+      delete(item){
+        self.items.splice(item._index, 1)
+      },
+      move(itemOrIndex, index){
+        if (index === itemOrIndex) return
+        if (index < 0) index += self.items.length
+        if (!(0 <= index && index < self.items.length)) throw new Error('index out of bounds')
+        const item = (typeof itemOrIndex === 'number') ? self.items[itemOrIndex] : itemOrIndex
+        self.items.splice(index, 0, self.items.splice(item._index, 0))
       }
-    },
-    attachToItems(){
-      //console.log("observable?",Object.keys(self.$mobx.values).map(v => self.$mobx.values[v]))
-      self.items.forEach((node) => {
-        if (node.setProp) node.setProp('parent', self.id)
-        else console.log('no .set', node)
-      })
-    },
-    replaceItemsWithReferences(){
-      self.items.forEach((node, index) => {
-        console.log('here', node)
-        if (node.id) self.replaceItemWithReference(index)
-      })
-    },
-    replaceItemWithReference(index){
-      if (typeof self.snapshot.items[index] === 'string') return // already a reference
-      let node = getSnapshot(self.items[index])
-      detach(self.items[index])
-      getRoot(self).addNode(node, self.id)
-      self.items.splice(index, 0, node.id)
-    },
-    delete(item){
-      self.items.splice(item._index, 1)
-    },
-    move(itemOrIndex, index){
-      if (index === itemOrIndex) return
-      if (index < 0) index += self.items.length
-      if (!(0 <= index && index < self.items.length)) throw new Error('index out of bounds')
-      const item = (typeof itemOrIndex === 'number') ? self.items[itemOrIndex] : itemOrIndex
-      self.items.splice(index, 0, self.items.splice(item._index, 0))
-    }
-  })
+    })
+  }
 })
 
 Define({
@@ -264,8 +261,8 @@ Define({
   },
   views : self => ({
     get items(){
-      console.log('get items')
-      if (!(self.parent && !self.parent.lineage)) {
+      console.log('get items', self.parent.lineage)
+      if (!(self.parent && self.parent.lineage)) {
         console.warn('no or invalid parent')
         return []
       }
@@ -280,6 +277,7 @@ Define({
       self.open = false
     },
     onSelect(node){
+      console.log('onSelect')
       self.selected = node.id
       if (node._isViewportItem) self.close()
     }
@@ -332,15 +330,18 @@ Define({
       if (isStateTreeNode(node)) node = getSnapshot(node)
       self.nodes.set(node.id, node)
     },
+    _afterCreate(node){
+      if (node === self) console.log("SELF")
+      if (node.attachToChildren) node.attachToChildren()
+      if (node.replaceChildrenWithReferences) node.replaceChildrenWithReferences()
+      if (node._attachToChildren) node._attachToChildren()
+      if (node._replaceChildrenWithReferences) node._replaceChildrenWithReferences()
+    },
     afterCreate(){
       if (!self.menu) self.menu = {type : 'menu'}
       if (!self.viewport) self.viewport  = {type : 'viewport'}
       console.log('booklet afterCreate')
-      walk(self, node => {
-        if (node.attachToChildren) node.attachToChildren()
-        if (node.replaceChildrenWithReferences) node.replaceChildrenWithReferences()
-        if (node.replaceItemsWithReferences) node.replaceItemsWithReferences()
-      })
+      walk(self, self._afterCreate)
       console.log(self, getSnapshot(self))
     }
 
