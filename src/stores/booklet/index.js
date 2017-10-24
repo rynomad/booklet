@@ -40,7 +40,6 @@ const Define = ({name, props = {}, views = noop, actions = noop, mixins = []}) =
         self.observablePropNames.forEach((propName) => {
           if (self[propName] && self[propName].id) self.replaceChildWithReference(propName)
         })
-        oldReplaceChildrenWithReferences()
       },
       replaceChildWithReference(propName){
         const node = self[propName]
@@ -50,10 +49,22 @@ const Define = ({name, props = {}, views = noop, actions = noop, mixins = []}) =
         self[propName] = node.id
       },
       clone(){
-
+        const snapshot = JSON.parse(json_stringify(getSnapshot(self)))
+        snapshot.id = undefined
+        snapshot.parent = undefined
+        return snapshot
       },
       deepClone(){
-
+        const clone = self.clone()
+        self.observablePropNames.forEach((propName) => {
+          console.log(propName)
+          if (propName === 'parent' || !self[propName]) return
+          if ( self[propName].id) clone[propName] = self[propName].deepClone()
+          else if (self[propName].constructor.name === 'ObservableArray'){
+            clone[propName] = self[propName].map(item => item.deepClone())
+          }
+        })
+        return clone
       }
     })
   }))
@@ -330,7 +341,7 @@ Define({
         if (node.replaceChildrenWithReferences) node.replaceChildrenWithReferences()
         if (node.replaceItemsWithReferences) node.replaceItemsWithReferences()
       })
-      console.log(self, getSnapshot(self))
+      console.log(self.menu, self.items[0].deepClone())
     }
 
   }),

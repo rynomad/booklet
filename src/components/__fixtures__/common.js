@@ -17,7 +17,7 @@ const bk = {
             },
             {
               type : "text",
-              value : "here's some text"
+              value : "here's some more text"
             },
           ]
         },
