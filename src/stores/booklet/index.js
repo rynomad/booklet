@@ -27,10 +27,6 @@ const Define = ({name, props = {}, views = noop, actions = noop, mixins = []}) =
     const oldAttachToChildren = self.attachToChildren || noop
     const oldReplaceChildrenWithReferences = self.replaceChildrenWithReferences || noop 
     return ({
-      afterCreate(){
-        const _root = self._root
-
-      },
       attachToChildren(){
         self.observableProps.forEach((node) => {
           if (node && node.setProp) node.setProp('parent', self.id)
@@ -46,11 +42,10 @@ const Define = ({name, props = {}, views = noop, actions = noop, mixins = []}) =
         })
         oldReplaceChildrenWithReferences()
       },
-
       replaceChildWithReference(propName){
         const node = self[propName]
         detach(self[propName])
-        console.log(getRoot(self))
+        console.log(getRoot(self), self)
         getRoot(self).addNode(node, self.id)
         self[propName] = node.id
       },
@@ -187,14 +182,14 @@ Define({
         self.replaceArrayMemberWithReference('items', index)
       }
     },
-    attachToChildren(){
+    attachToItems(){
       //console.log("observable?",Object.keys(self.$mobx.values).map(v => self.$mobx.values[v]))
       self.items.forEach((node) => {
         if (node.setProp) node.setProp('parent', self.id)
         else console.log('no .set', node)
       })
     },
-    replaceChildrenWithReferences(){
+    replaceItemsWithReferences(){
       self.items.forEach((node, index) => {
         console.log('here', node)
         if (node.id) self.replaceItemWithReference(index)
@@ -321,23 +316,23 @@ Define({
     nodes : types.optional(AnyMap, {})
   },
   actions : self => ({
+    addNode(node, parentId){
+      if (!isRoot(self)) throw new Error(`nodes must be added to root only (cwd : ${getPath(self)}):\n${getSnapshot(node)}`);
+      if (isStateTreeNode(node)) node = getSnapshot(node)
+      self.nodes.set(node.id, node)
+    },
     afterCreate(){
       if (!self.menu) self.menu = {type : 'menu'}
       if (!self.viewport) self.viewport  = {type : 'viewport'}
       console.log('booklet afterCreate')
       walk(self, node => {
         if (node.attachToChildren) node.attachToChildren()
-      })
-      walk(self, node => {
         if (node.replaceChildrenWithReferences) node.replaceChildrenWithReferences()
+        if (node.replaceItemsWithReferences) node.replaceItemsWithReferences()
       })
       console.log(self, getSnapshot(self))
-    },
-    addNode(node, parentId){
-      if (!isRoot(self)) throw new Error(`nodes must be added to root only (cwd : ${getPath(self)}):\n${getSnapshot(node)}`);
-      if (isStateTreeNode(node)) node = getSnapshot(node)
-      self.nodes.set(node.id, node)
     }
+
   }),
   mixins : ['collection', 'menuItem']
 })
