@@ -57,7 +57,42 @@ const bk = {
           ]
         },
         {
-          title : "page 4",
+          title : 'section 3',
+          type : 'section',
+          items : [
+            {
+              title : "page 4",
+              type : 'page',
+              items : [
+                {
+                  type : "text",
+                  value : "here's some text"
+                },
+                {
+                  type : "text",
+                  value : "here's some more text"
+                },
+              ]
+            },
+            {
+              title : "page 5",
+              type : "page",
+              items : [
+                {
+                  type : 'text_input',
+                  prompt : 'write some stuff',
+                  placeholder : 'here...'
+                },
+                {
+                  type : 'text',
+                  value : 'good job'
+                }
+              ]
+            }
+          ]
+        },
+        {
+          title : "page 6",
           type : "page",
           items : [
             {

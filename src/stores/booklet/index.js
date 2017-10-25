@@ -81,13 +81,28 @@ const node = types.model('node').props({
     return focused
   },
   get isFocused(){
-    return self.isRoot || (self.parent.focused === self)
+    let _res = false
+    if (self.isRoot) _res = true
+    else if (self.parent.focused === self) _res = true
+    return _res
   },
   get isChildOfFocused(){
-    return self.isRoot || self.parent.isFocused
+    let _res = false
+    if (self.isRoot) _res = true
+    else if (self.parent.isFocused) _res = true
+    return _res
+  },
+  get isOlderSiblingOfFocused(){
+    let _res = false
+    if (self.isRoot) _res = false
+    else if (self.parent.focused && (self._index < self.parent.focused._index)) _res = true
+    return _res
   },
   get isYoungerSiblingOfFocused(){
-    return self.isRoot || (self.parent.focused && self.parent.focused._index < self._index)
+    let _res = false
+    if (self.isRoot) _res = true
+    else if (self.parent.focused && (self.parent.focused._index < self._index)) _res = true
+    return _res
   },
   get observablePropNames(){
     return Object.keys(self.$mobx.values).map(v => self.$mobx.values[v]).filter(val => val.constructor.name === 'ObservableValue').map(v => v.name.split('.')[1]).filter(p => p != 'parent')
@@ -233,15 +248,14 @@ Define({
       return self._root.menu.selected === self
     },
     get isOpenInMenu(){
-      return self.isFocused || self.isChildOfFocused || self.isYoungerSiblingOfFocused
+      console.log(self.title, self.isFocused, self.isChildOfFocused, self.isYoungerSiblingOfFocused)
+      return (self.isFocused || self.isChildOfFocused || self.isYoungerSiblingOfFocused) && !self.isOlderSiblingOfFocused
     }
   }),
   actions : self => ({
     selectInMenu(){
       if (!self._root.menu || self._root.menu.type !== 'menu') throw new Error('no menu on root')
       self._root.menu.onSelect(self)
-      console.log(self.isFocused)
-      if (self.items) self.items.forEach((item) => console.log(item, item.isChildOfFocused))
     }
   })
 })
@@ -280,6 +294,7 @@ Define({
     },
     onSelect(node){
       console.log('onSelect', node.title)
+      if (self.selected === node) return (node.parent && self.onSelect(node.parent))
       if (self.selected) self.selected.unFocus()
       node.focus()
       self.selected = node.id
@@ -374,11 +389,6 @@ Define({
 
 Define({
   name : 'page',
-  actions : self => ({
-    unFocus(){
-      self.focused = undefined
-    }
-  }),
   mixins : ['collection','menuItem','viewportItem']
 })
 

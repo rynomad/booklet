@@ -10,7 +10,7 @@ const MenuItem = observer(({store, id}) => (
   <Collapse key={id} isOpen={store.isOpenInMenu}>
     <ListItem 
       onClick={store.selectInMenu} 
-      style={{background : store.menuBackground}}>
+      style={{ background : `#${store.isSelectedInMenu ? 'CCC' : 'FFF'}`}}>
       <Icon style={{ paddingLeft : `${store.depth}em`}} icon={store.menuIcon}/>
       {store.title || `${store.menuIcon}`}
     </ListItem>
