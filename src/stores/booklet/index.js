@@ -289,7 +289,6 @@ Define({
       self.isOpen = true
     },
     close(){
-      console.log(self)
       self.isOpen = false
     },
     onSelect(node){
@@ -371,7 +370,6 @@ Define({
 Define({
   name : '_input',
   props : {
-    prompt : types.string,
     value : Any
   },
   actions : self => ({
@@ -400,8 +398,11 @@ Define({
 Define({
   name : 'text',
   props : {
+    editable : false,
+    header : types.maybe(types.string),
     value : types.string
-  }
+  },
+  mixins : ['_input']
 })
 
 Define({
