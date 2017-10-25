@@ -69,18 +69,6 @@ const node = types.model('node').props({
   get isRoot(){
     return self._root === self
   },
-  get _focus(){
-    return (self.parent && self.parent.focus) || noop
-  },
-  get focus(){
-    return (id) => (self.focused = id) && self._focus(self.id)
-  },
-  get _unFocus(){
-    return (self.parent && self.parent.unFocus) || noop
-  },
-  get unFocus(){
-    return () => {(self.focused = undefined); self._unFocus()}
-  },
   get depth(){
     let depth = 0
     let parent = self.parent
@@ -93,8 +81,7 @@ const node = types.model('node').props({
     return focused
   },
   get isFocused(){
-    console.log(self)
-    return self.isRoot || self.parent.focused === self
+    return self.isRoot || (self.parent.focused === self)
   },
   get isChildOfFocused(){
     return self.isRoot || self.parent.isFocused
@@ -146,7 +133,19 @@ const node = types.model('node').props({
       }
     })
     return clone
-  }
+  },
+  focus(id){
+    self.focused = id
+    if (self.parent && self.parent.focus){
+      self.parent.focus(self.id)
+    }
+  },
+  unFocus(){
+    self.focused = undefined
+    if (self.parent && self.parent.unFocus){
+      self.parent.unFocus(self.id)
+    }
+  },
 }))
 
 
@@ -241,6 +240,8 @@ Define({
     selectInMenu(){
       if (!self._root.menu || self._root.menu.type !== 'menu') throw new Error('no menu on root')
       self._root.menu.onSelect(self)
+      console.log(self.isFocused)
+      if (self.items) self.items.forEach((item) => console.log(item, item.isChildOfFocused))
     }
   })
 })
@@ -256,7 +257,7 @@ Define({
 Define({
   name : 'menu', 
   props : {
-    open : false,
+    isOpen : false,
     selected : Any
   },
   views : self => ({
@@ -271,13 +272,16 @@ Define({
   }),
   actions : self => ({
     open(){
-      self.open = true
+      self.isOpen = true
     },
     close(){
-      self.open = false
+      console.log(self)
+      self.isOpen = false
     },
     onSelect(node){
-      console.log('onSelect')
+      console.log('onSelect', node.title)
+      if (self.selected) self.selected.unFocus()
+      node.focus()
       self.selected = node.id
       if (node._isViewportItem) self.close()
     }
@@ -370,8 +374,8 @@ Define({
 
 Define({
   name : 'page',
-  views : self => ({
-    get unFocus(){
+  actions : self => ({
+    unFocus(){
       self.focused = undefined
     }
   }),
