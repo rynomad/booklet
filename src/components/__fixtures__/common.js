@@ -26,9 +26,9 @@ const bk = {
           type : "page",
           items : [
             {
-              type : 'text_input',
-              prompt : 'write some stuff',
-              placeholder : 'here...'
+              type : 'text',
+              header : 'write some stuff',
+              value : 'ere...'
             },
             {
               type : 'text',
@@ -79,9 +79,9 @@ const bk = {
               type : "page",
               items : [
                 {
-                  type : 'text_input',
-                  prompt : 'write some stuff',
-                  placeholder : 'here...'
+                  type : 'text',
+                  header : 'write some stuff',
+                  value : 'ere...'
                 },
                 {
                   type : 'text',
@@ -96,9 +96,9 @@ const bk = {
           type : "page",
           items : [
             {
-              type : 'text_input',
-              prompt : 'write some stuff',
-              placeholder : 'here...'
+              type : 'text',
+              header : 'write some stuff',
+              value : ''
             },
             {
               type : 'text',

@@ -1,11 +1,9 @@
 import React from 'react'
-import StaticPage from './StaticPage'
-import Essay from './Essay.jsx'
-import Text from './Text.jsx'
-import EssayFactory from './EssayFactory.jsx'
-import {observer} from 'mobx-react'
-import {Collapse} from "@blueprintjs/core"
 import {Card, Col} from 'react-onsenui'
+import {Collapse} from '@blueprintjs/core'
+import {observer} from 'mobx-react'
+
+import Text from './Text.jsx'
 
 const PageItemInner = observer(({store}) => {
   console.log("inner", store)
