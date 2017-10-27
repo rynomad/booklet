@@ -99,7 +99,12 @@ const _collection = {
       if (index < 0) index += self.items.length
       if (!(0 <= index && index < self.items.length)) throw new Error('index out of bounds')
       const item = (typeof itemOrIndex === 'number') ? self.items[itemOrIndex] : itemOrIndex
-      self.items.splice(index, 0, self.items.splice(item._index, 0))
+      const items = JSON.parse(JSON.stringify(getSnapshot(self.items)))
+      const lastIndex = item._index
+      if (index > lastIndex) index--
+      self.items = []
+      items.splice(index, 0, items.splice(lastIndex, 1))
+      self.items = items
     }
   })
 }
@@ -127,6 +132,18 @@ const _page = {
   mixins : ['_collection','_menuItem','_viewportItem']
 }
 
+const _pageItem = {
+  name : '_pageItem',
+  props : {
+    _position : 0,
+  },
+  actions : self => ({
+    setPosition(value){
+      self._position = value
+    }
+  })
+}
+
 const _section = {
   name : '_section',
   mixins : ['_collection','_menuItem']
@@ -139,7 +156,7 @@ const _text = {
     header : types.maybe(types.string),
     value : types.string
   },
-  mixins : ['_input']
+  mixins : ['_input', '_pageItem']
 }
 
 export default () => {
@@ -149,6 +166,7 @@ export default () => {
   Define(_input)
   Define(_page)
   Define(_section)
+  Define(_pageItem)
   Define(_text)
 }
 

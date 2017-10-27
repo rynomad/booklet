@@ -17,37 +17,63 @@ const PageItemInner = observer(({store, pos}) => {
 })
 
 const PageItem = observer(({store, pos}) => 
-  <Collapse isOpen={true || store.isOpenInViewPort}>
+  //<Collapse isOpen={true || store.isOpenInViewPort}>
     <Card>
       <PageItemInner store={store} pos={pos}/>
     </Card>
-  </Collapse>
+  //</Collapse>
 )
 
-const Page = observer(({store}) => (
-  <TrackDocument formulas={[topTop]}>
-  {(topTop) => 
-    <Col>
-    {
-      store.items.map((item, index) =>
-        <Draggable
-        axis={'y'}
-
-        >
-          <TrackedDiv key={index} formulas={[topTop]}>
-            {
-              pos => {
-                console.log(item.id, pos)
-                return <PageItem store={item}/>
-              }
+const PageInner = observer(({store, topTop}) => 
+  <Col>
+  {
+    store.items.map((item, index) =>
+      <Draggable
+      key={index}
+      axis={'y'}
+      position={null}
+      onDrag={(e, data) => {
+        const prev = index ? store.items[index - 1] : null
+        const next = index < (store.items.length - 1)  ? store.items[index + 1] : null
+        const absolute = data.y + item._position
+        console.log(index)
+        if (prev && absolute < prev._position){
+          console.log("move up", index)
+          store.move(index, index - 1)
+          console.log(store.items.indexOf(item))
+        } else if (next && absolute > next._position){
+          console.log("move down", index)
+          store.move(index, index + 1)
+        }
+      }}
+      onStart={(e, data) => {
+        console.log(data.y, item._position)
+      }}
+      onStop={(e, data) => {
+        console.log(data.y, item._position)
+      }}
+      >
+        <TrackedDiv key={index} formulas={[topTop]}>
+          {
+            pos => {
+              console.log(item)
+              item.setPosition(pos)
+              return <PageItem store={item}/>
             }
-          </TrackedDiv>  
-        </Draggable>
-      )
-    }
+          }
+        </TrackedDiv>  
+      </Draggable>
+    )
+  }
   </Col>
+)
+
+const Page = ({store}) => (
+  <TrackDocument updateOnDidMount formulas={[topTop]}>
+  {
+    (topTop) => <PageInner store={store} topTop={topTop}/>
   }
   </TrackDocument>
-))
+)
 
 export default Page
