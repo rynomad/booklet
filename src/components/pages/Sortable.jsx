@@ -1,15 +1,13 @@
 import React, {Component} from 'react'
-import {Card, Col} from 'react-onsenui'
-import {Collapse} from '@blueprintjs/core'
 import {observer} from 'mobx-react'
 import DraggableList from 'react-draggable-list'
-import {_PageItem} from './Default.jsx'
+import {PageItem} from './Default.jsx'
 
 
 class SortablePageItem extends Component{
   render(){
     const {item, dragHandle} = this.props
-    return dragHandle(<_PageItem store={item}/>)
+    return dragHandle(<PageItem store={item}/>)
   }
 }
 

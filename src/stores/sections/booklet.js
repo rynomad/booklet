@@ -1,5 +1,5 @@
-import {types, isRoot, isStateTreeNode, walk, getPath, getSnapshot} from 'mobx-state-tree'
-import {AnyMap, Any} from '../Stores.js'
+import {types, walk} from 'mobx-state-tree'
+import {Any} from '../Stores.js'
 
 const menu = {
   name : 'menu', 

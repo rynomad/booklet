@@ -14,18 +14,18 @@ const PageItemInner = observer(({store, pos}) => {
   }
 })
 
-const _PageItem = ({store}) => <Card><PageItemInner store={store}/></Card>
+const PageItem = ({store}) => <Card><PageItemInner store={store}/></Card>
 
 const Page = observer(({store}) => 
   <Col>
     {
       store.items.map((item, key) => 
-        <_PageItem key={key} store={item}/>
+        <PageItem key={key} store={item}/>
       )
     }
   </Col>
 )
 
-export {_PageItem}
+export {PageItem}
 
 export default Page

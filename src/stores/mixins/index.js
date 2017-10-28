@@ -81,7 +81,6 @@ const _collection = {
     },
     _replaceChildrenWithReferences(){
       self.items.forEach((node, index) => {
-        console.log('here', node)
         if (node.id) self.replaceItemWithReference(index)
       })
     },
