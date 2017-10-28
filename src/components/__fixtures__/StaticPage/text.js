@@ -12,6 +12,34 @@ export default {
       {
         type : 'text',
         value : `sample text 2`
+      },
+      {
+        type : 'text',
+        value : `sample text 3`
+      },
+      {
+        type : 'text',
+        value : `sample text 4`
+      },
+      {
+        type : 'text',
+        value : `sample text 5`
+      },
+      {
+        type : 'text',
+        value : `sample text 6`
+      },
+      {
+        type : 'text',
+        value : `sample text 7`
+      },
+      {
+        type : 'text',
+        value : `sample text 8`
+      },
+      {
+        type : 'text',
+        value : `sample text 9`
       }
     ]
   }

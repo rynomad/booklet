@@ -1,4 +1,4 @@
-import {types, getSnapshot, detach, getRoot} from 'mobx-state-tree'
+import {types, getSnapshot, detach, getRoot, getPath, isStateTreeNode, walk} from 'mobx-state-tree'
 import uuid4 from 'uuid/v4'
 import json_stringify from 'safe-json-stringify'
 
@@ -58,7 +58,8 @@ const AnyMap = types.map(Any)
 
 const node = types.model('node').props({
   parent : Any,
-  focused : Any
+  focused : Any,
+  nodes : types.optional(AnyMap, {})
 }).views(self => ({
   get _index(){
     if (self.isRoot || !self.parent.items) return -1;
@@ -116,6 +117,22 @@ const node = types.model('node').props({
     return self.observablePropNames.map(v => self[v])
   }
 })).actions(self => ({
+  addNode(node, parentId){
+    if (!self.isRoot) throw new Error(`nodes must be added to root only (cwd : ${getPath(self)}):\n${getSnapshot(node)}`);
+    if (isStateTreeNode(node)) node = getSnapshot(node)
+    self.nodes.set(node.id, node)
+  },
+  _afterCreate(node){
+    if (node.attachToChildren) node.attachToChildren()
+    if (node.replaceChildrenWithReferences) node.replaceChildrenWithReferences()
+    if (node._attachToChildren) node._attachToChildren()
+    if (node._replaceChildrenWithReferences) node._replaceChildrenWithReferences()
+  },
+  afterCreate(){
+    if (self.isRoot) {
+      walk(self, self._afterCreate)
+    }
+  },
   attachToChildren(){
     self.observableProps.forEach((node) => {
       if (node && node.setProp) node.setProp('parent', self.id)

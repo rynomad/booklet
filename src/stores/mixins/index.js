@@ -1,5 +1,6 @@
 import {types, getSnapshot, detach, getRoot, isStateTreeNode} from 'mobx-state-tree'
 import {AnyArray, Any, Define} from '../Stores'
+
 const _menuItem = {
   name : '_menuItem',
   props : {
@@ -94,17 +95,19 @@ const _collection = {
     delete(item){
       self.items.splice(item._index, 1)
     },
-    move(itemOrIndex, index){
-      if (index === itemOrIndex) return
-      if (index < 0) index += self.items.length
-      if (!(0 <= index && index < self.items.length)) throw new Error('index out of bounds')
-      const item = (typeof itemOrIndex === 'number') ? self.items[itemOrIndex] : itemOrIndex
-      const items = JSON.parse(JSON.stringify(getSnapshot(self.items)))
-      const lastIndex = item._index
-      if (index > lastIndex) index--
-      self.items = []
-      items.splice(index, 0, items.splice(lastIndex, 1))
+    move(fromIndex, toIndex){
+      if (fromIndex === toIndex) return
+      if (toIndex < 0) toIndex += self.items.length
+      if (!(0 <= toIndex && toIndex < self.items.length)) return console.warn("ignoring out of bounds move")
+      
+      const items = JSON.parse(JSON.stringify(self.items))
+      console.log(items)
+      items.splice(toIndex, 0, items.splice(fromIndex, 1)[0])
+      console.log(items)
       self.items = items
+    },
+    setItems(items){
+      self.items = items.map(item => item.id ? item.id : item)
     }
   })
 }

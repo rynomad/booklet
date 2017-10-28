@@ -12,12 +12,6 @@ const MobxProxy = props => {
   console.log(props)
   const { value: NextProxy, next } = props.nextProxy;
   let store = window.store = Any.create(props.fixture._store)
-  if (store.type != 'booklet'){
-    walk(store, (node) => {
-      if (node.attachToChildren) node.attachToChildren()
-      if (node._attachToChildren) node._attachToChildren()
-    })
-  }
 
   //if (props.fixture._prop) store = store[props.fixture._prop]
   props.fixture.props = {store};
@@ -30,9 +24,9 @@ const IframeProxy = props => {
   const { value: NextProxy, next } = props.nextProxy;
 
   return (
-      <Page style={{width : 360, height : 640}}>
-        <NextProxy {...props} nextProxy={next()}/>
-      </Page>
+    <Page style={{width : 360, height : 640}}>
+      <NextProxy {...props} nextProxy={next()}/>
+    </Page>
   )
 }
 

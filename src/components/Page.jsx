@@ -2,9 +2,8 @@ import React, {Component} from 'react'
 import {Card, Col} from 'react-onsenui'
 import {Collapse} from '@blueprintjs/core'
 import {observer} from 'mobx-react'
-import Draggable from 'react-draggable'
-import {TrackDocument, Track, TrackedDiv} from 'react-track'
-import {topTop} from 'react-track/tracking-formulas';
+import DraggableList from 'react-draggable-list'
+import {getSnapshot} from 'mobx-state-tree'
 
 import Text from './Text.jsx'
 
@@ -16,64 +15,29 @@ const PageItemInner = observer(({store, pos}) => {
   }
 })
 
-const PageItem = observer(({store, pos}) => 
-  //<Collapse isOpen={true || store.isOpenInViewPort}>
-    <Card>
-      <PageItemInner store={store} pos={pos}/>
-    </Card>
-  //</Collapse>
-)
-
-const PageInner = observer(({store, topTop}) => 
-  <Col>
-  {
-    store.items.map((item, index) =>
-      <Draggable
-      key={index}
-      axis={'y'}
-      position={null}
-      onDrag={(e, data) => {
-        const prev = index ? store.items[index - 1] : null
-        const next = index < (store.items.length - 1)  ? store.items[index + 1] : null
-        const absolute = data.y + item._position
-        console.log(index)
-        if (prev && absolute < prev._position){
-          console.log("move up", index)
-          store.move(index, index - 1)
-          console.log(store.items.indexOf(item))
-        } else if (next && absolute > next._position){
-          console.log("move down", index)
-          store.move(index, index + 1)
-        }
-      }}
-      onStart={(e, data) => {
-        console.log(data.y, item._position)
-      }}
-      onStop={(e, data) => {
-        console.log(data.y, item._position)
-      }}
-      >
-        <TrackedDiv key={index} formulas={[topTop]}>
-          {
-            pos => {
-              console.log(item)
-              item.setPosition(pos)
-              return <PageItem store={item}/>
-            }
-          }
-        </TrackedDiv>  
-      </Draggable>
+class PageItem extends Component{
+  render(){
+    const {item, itemSelected, dragHandle} = this.props
+    return dragHandle(
+      <Card>
+        <PageItemInner store={item}/>
+      </Card>
     )
   }
-  </Col>
-)
+}
 
-const Page = ({store}) => (
-  <TrackDocument updateOnDidMount formulas={[topTop]}>
-  {
-    (topTop) => <PageInner store={store} topTop={topTop}/>
+class Page extends Component{
+  render(){
+    const {store} = this.props
+    const items = store.items.map(item => item)
+    return <DraggableList
+      itemKey="id"
+      template={PageItem}
+      list={items}
+      onMoveEnd={newList => store.setItems(newList)}
+      container={()=>this.HTMLElement}
+    />
   }
-  </TrackDocument>
-)
+}
 
 export default Page
