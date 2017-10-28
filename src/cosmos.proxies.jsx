@@ -33,5 +33,4 @@ const IframeProxy = props => {
 export default [
   IframeProxy,
   MobxProxy
-  
 ]
