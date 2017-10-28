@@ -28,5 +28,8 @@
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject",
     "cosmos": "NODE_ENV=development cosmos"
+  },
+  "devDependencies": {
+    "mobx-wiretap": "^0.12.0"
   }
 }

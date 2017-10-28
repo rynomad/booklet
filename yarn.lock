@@ -4214,6 +4214,10 @@ mobx-state-tree@1.1.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/mobx-state-tree/-/mobx-state-tree-1.1.0.tgz#72acb4a9d19d74df82694ab56a7d955f8e349da3"
 
+mobx-wiretap@^0.12.0:
+  version "0.12.0"
+  resolved "https://registry.yarnpkg.com/mobx-wiretap/-/mobx-wiretap-0.12.0.tgz#9da072c027ea51e1f8a1eec736af7b24493cae11"
+
 mobx@^3.3.0:
   version "3.3.0"
   resolved "https://registry.yarnpkg.com/mobx/-/mobx-3.3.0.tgz#1bc1dd7e78547065af04b49bdb7f2098cada47aa"

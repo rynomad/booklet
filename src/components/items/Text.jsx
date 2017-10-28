@@ -7,14 +7,14 @@ import '@blueprintjs/core/dist/blueprint.css'
 
 const Header = ({store}) => (
   <div>
-    <h5 style={{textAlign : 'center'}}>{store.header}</h5>
+    <h5 style={{textAlign : 'center'}}>{store.title}</h5>
     <hr/>
   </div>
 )
 
 const Text = observer(({store}) => (
   <div>
-    {store.header ? <Header store={store}/> : null}
+    {store.title ? <Header store={store}/> : null}
     {
       store.editable ? <EditableText 
                         multiline

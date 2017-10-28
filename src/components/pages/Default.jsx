@@ -3,14 +3,16 @@
 import React from 'react'
 import {Card, Col} from 'react-onsenui'
 import Text from '../items/Text.jsx'
+import Factory from '../items/Factory.jsx'
 import {observer} from 'mobx-react'
 import 'onsenui/css/onsenui.css'
 import 'onsenui/css/onsen-css-components.css'
 
-const PageItemInner = observer(({store, pos}) => {
+const PageItemInner = observer(({store}) => {
   switch(store.type){
+    case 'factory': return <Factory store={store}/>
     case 'text': return <Text store={store}/>
-    default : return <div>{store.value}</div>
+    default : return <div>{store.id}</div>
   }
 })
 

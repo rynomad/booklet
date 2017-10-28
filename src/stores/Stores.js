@@ -57,6 +57,7 @@ const AnyArray = types.array(Any)
 const AnyMap = types.map(Any)
 
 const node = types.model('node').props({
+  title : types.maybe(types.string),
   parent : Any,
   focused : Any,
   nodes : types.optional(AnyMap, {})
@@ -117,7 +118,7 @@ const node = types.model('node').props({
     return self.observablePropNames.map(v => self[v])
   }
 })).actions(self => ({
-  addNode(node, parentId){
+  addNode(node){
     if (!self.isRoot) throw new Error(`nodes must be added to root only (cwd : ${getPath(self)}):\n${getSnapshot(node)}`);
     if (isStateTreeNode(node)) node = getSnapshot(node)
     self.nodes.set(node.id, node)

@@ -64,12 +64,10 @@ const _collection = {
   actions : self => ({
     insert(item, index = 0){
       if (index < 0) index += self.items.length
-
-      const insert = (typeof item === 'string') ? item : isStateTreeNode(item) ? item.id : item
-      self.items.unshift(insert)
+      self.items.unshift(item)
       self.move(0, index)
       if (!isStateTreeNode(item)){
-        self.replaceArrayMemberWithReference('items', index)
+        self._replaceChildrenWithReferences('items', index)
       }
     },
     _attachToChildren(){
@@ -155,8 +153,7 @@ const _text = {
   name : '_text',
   props : {
     editable : false,
-    header : types.maybe(types.string),
-    value : types.string
+    value : types.maybe(types.string)
   },
   mixins : ['_input', '_pageItem']
 }
