@@ -19,6 +19,7 @@ const menu = {
   }),
   actions : self => ({
     open(){
+      console.log("menu open")
       self.isOpen = true
     },
     close(){
@@ -30,7 +31,10 @@ const menu = {
       if (self.selected) self.selected.unFocus()
       node.focus()
       self.selected = node.id
-      if (node._isViewportItem) self.close()
+      if (node._isViewportItem) {
+        self.parent.viewport.goItem(node)
+        self.close()
+      }
     }
   })
 }
@@ -54,6 +58,7 @@ const viewport = {
   }),
   actions : self => ({
     goItem(item){
+      console.log("goItem")
       self.selected = item.id
     },
     goIndex(index){

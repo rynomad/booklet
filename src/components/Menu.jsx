@@ -18,9 +18,8 @@ const MenuItem = observer(({store}) => (
 ))
 
 const Menu = observer(({store}) => {
-  console.log(store)
   return <List
-    dataSource={store.menu.items}
+    dataSource={store.items}
     renderRow={(store, index) => (<MenuItem store={store} key={index}/>)}
   />
 })

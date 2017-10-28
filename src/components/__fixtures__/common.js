@@ -13,6 +13,7 @@ const bk = {
           items : [
             {
               type : "text",
+              header : "s1 page 1",
               value : "here's some text"
             },
             {
@@ -27,7 +28,7 @@ const bk = {
           items : [
             {
               type : 'text',
-              header : 'write some stuff',
+              header : "s1 page 2",
               value : 'ere...'
             },
             {
@@ -44,16 +45,35 @@ const bk = {
       items : [
         {
           title : "page 3",
-          type : 'page',
+          type : 'sorter',
           items : [
             {
               type : "text",
+              header : 's2 p3',
               value : "here's some text"
             },
             {
               type : "text",
               value : "here's some more text"
             },
+            {
+              type : "text",
+              header : 's2 p3',
+              value : "here's some text"
+            },
+            {
+              type : "text",
+              value : "here's some more text"
+            },
+            {
+              type : "text",
+              header : 's2 p3',
+              value : "here's some text"
+            },
+            {
+              type : "text",
+              value : "here's some more text"
+            }
           ]
         },
         {
@@ -66,6 +86,7 @@ const bk = {
               items : [
                 {
                   type : "text",
+                  header : "s2s3 page 4",
                   value : "here's some text"
                 },
                 {
@@ -80,7 +101,7 @@ const bk = {
               items : [
                 {
                   type : 'text',
-                  header : 'write some stuff',
+                  header : 's2s3 page 5',
                   value : 'ere...'
                 },
                 {
@@ -97,7 +118,7 @@ const bk = {
           items : [
             {
               type : 'text',
-              header : 'write some stuff',
+              header : 's2s3 page 6',
               value : ''
             },
             {

@@ -12,7 +12,7 @@ const MobxProxy = props => {
   const { value: NextProxy, next } = props.nextProxy;
   let store = window.store = Any.create(props.fixture._store)
 
-  //if (props.fixture._prop) store = store[props.fixture._prop]
+  if (props.fixture._prop) store = store[props.fixture._prop]
   props.fixture.props = {store};
   return (<NextProxy {...props} nextProxy={next()}/>)
 };

@@ -8,14 +8,13 @@ import 'onsenui/css/onsen-css-components.css'
 import '@blueprintjs/core/dist/blueprint.css'
 
 const Viewport = observer(({store}) => (
-  <Carousel index={store.viewIndex} onOverscroll={store.onViewOverscroll} onPostChange={store.onViewPostChange} fullscreen swipeable autoScroll overscrollable>
+  <Carousel index={store.activeIndex} onOverscroll={store.onViewOverscroll} onPostChange={(evt) => {
+    console.log(evt)
+    store.goIndex(evt.activeIndex)
+  }} fullscreen swipeable autoScroll overscrollable>
     {
-      store.posterity.map((store, index) =>
-        <CarouselItem key={index} style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center"
-        }}>
+      store.items.map((store, index) =>
+        <CarouselItem key={index}>
           <Page store={store}/>
         </CarouselItem>
       )
