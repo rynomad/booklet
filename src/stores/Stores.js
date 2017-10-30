@@ -60,14 +60,12 @@ const node = types.model('node').props({
   title : types.maybe(types.string),
   parent : Any,
   focused : Any,
+  _root : Any,
   nodes : types.optional(AnyMap, {})
 }).views(self => ({
   get _index(){
     if (self.isRoot || !self.parent.items) return -1;
     return self.parent.items.indexOf(self);
-  },
-  get _root(){ 
-    return getRoot(self) 
   },
   get isRoot(){
     return self._root === self
@@ -86,25 +84,25 @@ const node = types.model('node').props({
   get isFocused(){
     let _res = false
     if (self.isRoot) _res = true
-    else if (self.parent.focused === self) _res = true
+    else if (self.parent && self.parent.focused === self) _res = true
     return _res
   },
   get isChildOfFocused(){
     let _res = false
     if (self.isRoot) _res = true
-    else if (self.parent.isFocused) _res = true
+    else if (self.parent && self.parent.isFocused) _res = true
     return _res
   },
   get isOlderSiblingOfFocused(){
     let _res = false
     if (self.isRoot) _res = false
-    else if (self.parent.focused && (self._index < self.parent.focused._index)) _res = true
+    else if (self.parent && self.parent.focused && (self._index < self.parent.focused._index)) _res = true
     return _res
   },
   get isYoungerSiblingOfFocused(){
     let _res = false
     if (self.isRoot) _res = true
-    else if (self.parent.focused && (self.parent.focused._index < self._index)) _res = true
+    else if (self.parent && self.parent.focused && (self.parent.focused._index < self._index)) _res = true
     return _res
   },
   get observablePropNames(){
@@ -125,12 +123,14 @@ const node = types.model('node').props({
   },
   _afterCreate(node){
     if (node.attachToChildren) node.attachToChildren()
-    if (node.replaceChildrenWithReferences) node.replaceChildrenWithReferences()
     if (node._attachToChildren) node._attachToChildren()
+    if (node.replaceChildrenWithReferences) node.replaceChildrenWithReferences()
     if (node._replaceChildrenWithReferences) node._replaceChildrenWithReferences()
   },
   afterCreate(){
+    self._root = getRoot(self).id
     if (self.isRoot) {
+      console.log("walk root", self.id)
       walk(self, self._afterCreate)
     }
   },
@@ -150,7 +150,6 @@ const node = types.model('node').props({
   replaceChildWithReference(propName){
     const node = self[propName]
     detach(self[propName])
-    console.log(node.id)
     getRoot(self).addNode(node, self.id)
     self[propName] = node.id
   },
@@ -163,7 +162,6 @@ const node = types.model('node').props({
   deepClone(){
     const clone = self.clone()
     self.observablePropNames.forEach((propName) => {
-      console.log(propName)
       if (propName === 'parent' || !self[propName]) return
       if ( self[propName].id) clone[propName] = self[propName].deepClone()
       else if (self[propName].constructor.name === 'ObservableArray'){

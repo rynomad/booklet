@@ -14,6 +14,7 @@ const MobxProxy = props => {
 
   if (props.fixture._prop) store = store[props.fixture._prop]
   props.fixture.props = {store};
+  console.log(store)
   return (<NextProxy {...props} nextProxy={next()}/>)
 };
 

@@ -41,7 +41,6 @@ const _viewportItem = {
 const _collection = {
   name : '_collection',
   props : {
-    title : types.maybe(types.string),
     items : types.optional(AnyArray,[])
   }, 
   views : self => ({   
@@ -63,15 +62,15 @@ const _collection = {
   }),
   actions : self => ({
     insert(item, index = 0){
-      if (index < 0) index += self.items.length
+      if (index < 0) index += (self.items.length + 1)
       self.items.unshift(item)
       self.move(0, index)
-      if (!isStateTreeNode(item)){
-        self._replaceChildrenWithReferences('items', index)
-      }
+      self.replaceItemWithReference(index)
+      console.log(getSnapshot(self._root))
     },
     _attachToChildren(){
-      //console.log("observable?",Object.keys(self.$mobx.values).map(v => self.$mobx.values[v]))
+
+      console.log(getSnapshot(self))
       self.items.forEach((node) => {
         if (node.setProp) node.setProp('parent', self.id)
         else console.log('no .set', node)

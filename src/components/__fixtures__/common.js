@@ -20,7 +20,22 @@ const bk = {
             {
               type : "factory",
               title : 'name your goal',
-              value : 'some text'
+              value : 'some text',
+              template_item : {
+                type : 'text',
+                editable : true
+              },
+              template_appendix : {
+                title : 'to be changed',
+                type : 'section',
+                items : [
+                  {
+                    type : 'page',
+                    items : [
+                    ]
+                  }
+                ]
+              }
             },
           ]
         },
