@@ -10,6 +10,7 @@ import '@blueprintjs/core/dist/blueprint.css'
 const MobxProxy = props => {
   console.log(props)
   const { value: NextProxy, next } = props.nextProxy;
+  console.log("CREATE STORE")
   let store = window.store = Any.create(props.fixture._store)
 
   if (props.fixture._prop) store = store[props.fixture._prop]

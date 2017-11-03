@@ -1,4 +1,4 @@
-import {types, getSnapshot, detach, getRoot, getPath, isStateTreeNode, walk} from 'mobx-state-tree'
+import {types, getSnapshot, detach, getRoot, getPath, getPathParts, isStateTreeNode, walk} from 'mobx-state-tree'
 import uuid4 from 'uuid/v4'
 import json_stringify from 'safe-json-stringify'
 
@@ -60,9 +60,11 @@ const node = types.model('node').props({
   title : types.maybe(types.string),
   parent : Any,
   focused : Any,
-  _root : Any,
   nodes : types.optional(AnyMap, {})
 }).views(self => ({
+  get _root(){
+    return getRoot(self)
+  },
   get _index(){
     if (self.isRoot || !self.parent.items) return -1;
     return self.parent.items.indexOf(self);
@@ -122,20 +124,22 @@ const node = types.model('node').props({
     self.nodes.set(node.id, node)
   },
   _afterCreate(node){
-    if (node.attachToChildren) node.attachToChildren()
-    if (node._attachToChildren) node._attachToChildren()
+    if (getPathParts(node)[0] === 'nodes') return console.log(getPathParts(node))
     if (node.replaceChildrenWithReferences) node.replaceChildrenWithReferences()
     if (node._replaceChildrenWithReferences) node._replaceChildrenWithReferences()
+    if (node.attachToChildren) node.attachToChildren()
+    if (node._attachToChildren) node._attachToChildren()
   },
   afterCreate(){
-    self._root = getRoot(self).id
     if (self.isRoot) {
       console.log("walk root", self.id)
       walk(self, self._afterCreate)
+      console.log(getSnapshot(self))
     }
   },
   attachToChildren(){
     self.observableProps.forEach((node) => {
+
       if (node && node.setProp) node.setProp('parent', self.id)
     })
   },
@@ -149,6 +153,7 @@ const node = types.model('node').props({
   },
   replaceChildWithReference(propName){
     const node = self[propName]
+    console.trace("CALLING DETACH", self.title, propName);
     detach(self[propName])
     getRoot(self).addNode(node, self.id)
     self[propName] = node.id

@@ -61,16 +61,26 @@ const _collection = {
     }
   }),
   actions : self => ({
-    insert(item, index = 0){
+    insert(snapshot, index = 0){
       if (index < 0) index += (self.items.length + 1)
-      self.items.unshift(item)
+      const item = Any.create(snapshot)
+      item.setProp('parent', self.id)
+      const nodes = []
+      item.nodes.forEach(node => {
+        nodes.push(getSnapshot(node))
+      })
+      
+      item.setProp('nodes',{})
+      nodes.unshift(getSnapshot(item))
+      nodes.forEach(self._root.addNode)
+
+      self.items.unshift(item.id)
       self.move(0, index)
-      self.replaceItemWithReference(index)
       console.log(getSnapshot(self._root))
     },
     _attachToChildren(){
 
-      console.log(getSnapshot(self))
+      console.log(getSnapshot(self), self._root)
       self.items.forEach((node) => {
         if (node.setProp) node.setProp('parent', self.id)
         else console.log('no .set', node)

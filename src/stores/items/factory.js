@@ -1,4 +1,4 @@
-import {types} from 'mobx-state-tree'
+import {types, getSnapshot} from 'mobx-state-tree'
 import {Any} from '../Stores'
 
 const factory = {
@@ -19,6 +19,7 @@ const factory = {
         console.log("template appendix")
         const appendix = self.template_appendix.deepClone()
         self.parent.parent.insert(appendix, -1)
+        console.log(getSnapshot(self._root))
       }
     }
   }),

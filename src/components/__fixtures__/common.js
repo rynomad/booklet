@@ -32,6 +32,14 @@ const bk = {
                   {
                     type : 'page',
                     items : [
+                      {
+                        type : 'text',
+                        value : 'some templated text'
+                      },
+                      {
+                        type : 'text',
+                        value : 'some other'
+                      }
                     ]
                   }
                 ]
