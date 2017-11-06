@@ -5,16 +5,8 @@ import 'onsenui/css/onsenui.css'
 import 'onsenui/css/onsen-css-components.css'
 import '@blueprintjs/core/dist/blueprint.css'
 
-const Header = ({store}) => (
-  <div>
-    <h5 style={{textAlign : 'center'}}>{store.title}</h5>
-    <hr/>
-  </div>
-)
-
 const Text = observer(({store}) => (
   <div>
-    {store.title ? <Header store={store}/> : null}
     {
       store.editable ? <EditableText 
                         multiline

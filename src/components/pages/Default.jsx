@@ -16,9 +16,22 @@ const PageItemInner = observer(({store}) => {
   }
 })
 
-const PageItem = ({store}) => <Card><PageItemInner store={store}/></Card>
+const Header = ({store}) => (
+  <div>
+    <h5 style={{textAlign : 'center'}}>{store.title}</h5>
+    <hr/>
+  </div>
+)
 
-const Page = observer(({store}) => 
+const pass = i => i
+
+const PageItem = ({store, dragHandle = pass }) => 
+  <Card>
+    {store.title ? dragHandle(<Header store={store}/>) : null}
+    <PageItemInner store={store}/>
+  </Card>
+
+const Page = observer(({store, dragHandle}) => 
   <Col>
     {
       store.items.map((item, key) => 

@@ -7,7 +7,7 @@ import {PageItem} from './Default.jsx'
 class SortablePageItem extends Component{
   render(){
     const {item, dragHandle} = this.props
-    return dragHandle(<PageItem store={item}/>)
+    return <PageItem store={item} dragHandle={dragHandle}/>
   }
 }
 
@@ -15,7 +15,7 @@ const SortablePage = observer(({store}) => <DraggableList
                                               itemKey="id"
                                               template={SortablePageItem}
                                               list={store.items.map(item => item)}
-                                              onMoveEnd={newList => store.setItems(newList)}
+                                              onMoveEnd={store.setItems}
                                               container={()=>document.body}
                                             />)
 
