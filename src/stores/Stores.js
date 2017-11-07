@@ -60,6 +60,7 @@ const node = types.model('node').props({
   title : types.maybe(types.string),
   parent : Any,
   focused : Any,
+  appendix : Any,
   nodes : types.optional(AnyMap, {})
 }).views(self => ({
   get _root(){
@@ -124,18 +125,11 @@ const node = types.model('node').props({
     self.nodes.set(node.id, node)
   },
   _afterCreate(node){
-    if (getPathParts(node)[0] === 'nodes') return console.log(getPathParts(node))
+    console.log(getPath(node))
     if (node.replaceChildrenWithReferences) node.replaceChildrenWithReferences()
     if (node._replaceChildrenWithReferences) node._replaceChildrenWithReferences()
     if (node.attachToChildren) node.attachToChildren()
     if (node._attachToChildren) node._attachToChildren()
-  },
-  afterCreate(){
-    if (self.isRoot) {
-      console.log("walk root", self.id)
-      walk(self, self._afterCreate)
-      console.log(getSnapshot(self))
-    }
   },
   attachToChildren(){
     self.observableProps.forEach((node) => {

@@ -1,4 +1,4 @@
-import {types, getSnapshot, detach, getRoot, isStateTreeNode} from 'mobx-state-tree'
+import {types, getSnapshot, detach, getRoot, isStateTreeNode, walk} from 'mobx-state-tree'
 import {AnyArray, Any, Define} from '../Stores'
 
 const _menuItem = {
@@ -63,19 +63,9 @@ const _collection = {
   actions : self => ({
     insert(snapshot, index = 0){
       if (index < 0) index += (self.items.length + 1)
-      const item = Any.create(snapshot)
-      item.setProp('parent', self.id)
-      const nodes = []
-      item.nodes.forEach(node => {
-        nodes.push(getSnapshot(node))
-      })
-      
-      item.setProp('nodes',{})
-      nodes.unshift(getSnapshot(item))
-      nodes.forEach(self._root.addNode)
-
-      self.items.unshift(item.id)
+      self.items.unshift(snapshot)
       self.move(0, index)
+      walk(self, self._root._afterCreate)
       console.log(getSnapshot(self._root))
     },
     _attachToChildren(){

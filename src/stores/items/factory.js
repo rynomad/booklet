@@ -6,21 +6,15 @@ const factory = {
   props : {
     editable : true,
     button : 'create',
-    template_item : Any,
-    template_appendix : Any
+    template: Any
   },
   actions : self => ({
     create(){
-      const item = self.template_item.deepClone()
-      item.title = self.value
+      const item = self.template.deepClone()
+      console.log(item)
+      item.title = item.appendix.title = self.value
       self.parent.insert(item, -2)
       self.value = ''
-      if (self.template_appendix){
-        console.log("template appendix")
-        const appendix = self.template_appendix.deepClone()
-        self.parent.parent.insert(appendix, -1)
-        console.log(getSnapshot(self._root))
-      }
     }
   }),
   mixins : ['text']

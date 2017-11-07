@@ -1,13 +1,26 @@
 import React, {Component} from 'react'
 import {observer} from 'mobx-react'
 import DraggableList from 'react-draggable-list'
-import {PageItem} from './Default.jsx'
+import {Card} from 'react-onsenui'
+import {Collapse} from '@blueprintjs/core'
+import {PageItemInner, PageItemHeader} from './Default.jsx'
 
 
 class SortablePageItem extends Component{
+  getDragHeight(){
+    return 70
+  }
   render(){
-    const {item, dragHandle} = this.props
-    return <PageItem store={item} dragHandle={dragHandle}/>
+    const {item, dragHandle, anySelected} = this.props
+    return (
+      <Card>
+        {item.title ? dragHandle(<PageItemHeader store={item}/>) : null}
+        <Collapse isOpen={anySelected < 0.4}>
+          <hr/>
+          <PageItemInner store={item}/>
+        </Collapse>
+      </Card>
+    )
   }
 }
 

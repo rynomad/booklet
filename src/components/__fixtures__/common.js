@@ -9,42 +9,36 @@ const bk = {
       items : [
         {
           title : "page 1",
-          type : 'page',
+          type : 'sorter',
           items : [
-            {
-              type : "text",
-              title : "s1 page 1",
-              editable : true,
-              value : "here's some text"
-            },
             {
               type : "factory",
               title : 'name your goal',
               value : 'some text',
-              template_item : {
+              template : {
                 type : 'text',
-                editable : true
-              },
-              template_appendix : {
-                title : 'to be changed',
-                type : 'section',
-                items : [
-                  {
-                    type : 'page',
-                    items : [
-                      {
-                        type : 'text',
-                        value : 'some templated text'
-                      },
-                      {
-                        type : 'text',
-                        value : 'some other'
-                      }
-                    ]
-                  }
-                ]
+                editable : true,
+                appendix : {
+                  title : 'to be changed',
+                  type : 'section',
+                  items : [
+                    {
+                      type : 'page',
+                      items : [
+                        {
+                          type : 'text',
+                          value : 'some templated text'
+                        },
+                        {
+                          type : 'text',
+                          value : 'some other'
+                        }
+                      ]
+                    }
+                  ]
+                }
               }
-            },
+            }
           ]
         },
         {

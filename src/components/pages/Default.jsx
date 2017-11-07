@@ -16,10 +16,9 @@ const PageItemInner = observer(({store}) => {
   }
 })
 
-const Header = ({store}) => (
+const PageItemHeader = ({store}) => (
   <div>
     <h5 style={{textAlign : 'center'}}>{store.title}</h5>
-    <hr/>
   </div>
 )
 
@@ -27,7 +26,8 @@ const pass = i => i
 
 const PageItem = ({store, dragHandle = pass }) => 
   <Card>
-    {store.title ? dragHandle(<Header store={store}/>) : null}
+    {store.title ? dragHandle(<PageItemHeader store={store}/>) : null}
+    <hr/>
     <PageItemInner store={store}/>
   </Card>
 
@@ -41,6 +41,6 @@ const Page = observer(({store, dragHandle}) =>
   </Col>
 )
 
-export {PageItem}
+export {PageItemInner, PageItemHeader}
 
 export default Page
