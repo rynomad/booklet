@@ -74,10 +74,10 @@ const _collection = {
       if (self.parent && self.parent.items){
         self.parent.items.forEach(item => item.update && item.update())
       }
-      console.log(getSnapshot(self._root))
+      //console.log(getSnapshot(self._root))
     },
     _attachToChildren(){
-      console.log(getSnapshot(self), self._root)
+      //console.log(getSnapshot(self), self._root)
       self.items.forEach((node) => {
         if (node.setProp) node.setProp('parent', self.id)
         else console.log('no .set', node)
@@ -104,15 +104,15 @@ const _collection = {
       if (!(0 <= toIndex && toIndex < self.items.length)) return console.warn("ignoring out of bounds move")
       
       const items = JSON.parse(JSON.stringify(self.items))
-      console.log(items)
+      //console.log(items)
       items.splice(toIndex, 0, items.splice(fromIndex, 1)[0])
-      console.log(items)
+      //console.log(items)
       self.items = items
     },
     setItems(items){
       self.items = items.map(item => item.id ? item.id : item)
       if (self.parent && self.parent.items){
-        console.log('update from setItems')
+        //console.log('update from setItems')
         self.parent.items.forEach(item => item.update && item.update())
       }
     }
@@ -177,12 +177,12 @@ const _tagged = {
   },
   views : self => ({
     family(){
-      console.log("computing family", self.parent.title);
+      //console.log("computing family", self.parent.title);
       const nodes = []
       const tag = self.tag
       walk(self._root.nodes, node => {
         if (node && node.id && (node.tag === tag) && node !== self){
-          console.log(node.title)
+          //console.log(node.title)
           nodes.push(node)
         }
       })

@@ -9,7 +9,7 @@ const menu = {
   },
   views : self => ({
     get items(){
-      console.log('get items', self.parent.lineage)
+      //console.log('get items', self.parent.lineage)
       if (!(self.parent && self.parent.lineage)) {
         console.warn('no or invalid parent')
         return []
@@ -19,14 +19,14 @@ const menu = {
   }),
   actions : self => ({
     open(){
-      console.log("menu open")
+      //console.log("menu open")
       self.isOpen = true
     },
     close(){
       self.isOpen = false
     },
     onSelect(node){
-      console.log('onSelect', node.title)
+      //console.log('onSelect', node.title)
       if (self.selected === node) return (node.parent && self.onSelect(node.parent))
       if (self.selected) self.selected.unFocus()
       node.focus()
@@ -58,7 +58,7 @@ const viewport = {
   }),
   actions : self => ({
     goItem(item){
-      console.log("goItem")
+      //console.log("goItem")
       self.selected = item.id
     },
     goIndex(index){

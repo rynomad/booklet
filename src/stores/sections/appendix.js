@@ -10,7 +10,7 @@ const appendices = {
   mixins : ['_tagged', '_menuItem', '_section'],
   actions : self => ({
     update(){
-      console.log('update appendices')
+      //console.log('update appendices')
       const items = self.family()
                        .filter((item) => item.appendix && item.parent.type !== 'factory')
                        .sort((item1, item2) => item1.parent.items.indexOf(item1) - item2.parent.items.indexOf(item2))
@@ -21,7 +21,7 @@ const appendices = {
       })
 
       self.items = items.map(({id}) => id)
-      console.log(self.items)
+      //console.log(self.items)
     }
   })
 }

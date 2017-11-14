@@ -8,14 +8,14 @@ import 'onsenui/css/onsen-css-components.css'
 import '@blueprintjs/core/dist/blueprint.css'
 
 const MobxProxy = props => {
-  console.log(props)
+  //console.log(props)
   const { value: NextProxy, next } = props.nextProxy;
-  console.log("CREATE STORE")
+  //console.log("CREATE STORE")
   let store = window.store = Any.create(props.fixture._store)
 
   if (props.fixture._prop) store = store[props.fixture._prop]
   props.fixture.props = {store};
-  console.log(store)
+  //console.log(store)
   return (<NextProxy {...props} nextProxy={next()}/>)
 };
 

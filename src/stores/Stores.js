@@ -8,7 +8,7 @@ const noop = () => ({})
 const Define = ({name, props = {}, views = noop, actions = noop, mixins = []}) => {
   if (!name) throw new Error(`node required`)
   if (NODES.has(name)) throw new Error(`already have type ${name}`)
-  console.log(mixins)
+  //console.log(mixins)
   mixins = mixins.map(name => NODES.get(name).types[1])
 
   Object.keys(props).forEach(key => {
@@ -125,7 +125,7 @@ const node = types.model('node').props({
     self.nodes.set(node.id, node)
   },
   _afterCreate(node){
-    console.log(getPath(node))
+    //console.log(getPath(node))
     if (node.replaceChildrenWithReferences) node.replaceChildrenWithReferences()
     if (node._replaceChildrenWithReferences) node._replaceChildrenWithReferences()
     if (node.attachToChildren) node.attachToChildren()
@@ -147,7 +147,7 @@ const node = types.model('node').props({
   },
   replaceChildWithReference(propName){
     const node = self[propName]
-    console.trace("CALLING DETACH", self.title, propName);
+    //console.log("CALLING DETACH", self.title, propName);
     detach(self[propName])
     getRoot(self).addNode(node, self.id)
     self[propName] = node.id

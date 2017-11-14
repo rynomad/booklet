@@ -9,7 +9,7 @@ import '@blueprintjs/core/dist/blueprint.css'
 
 const Viewport = observer(({store}) => (
   <Carousel index={store.activeIndex} onOverscroll={store.onViewOverscroll} onPostChange={(evt) => {
-    console.log(evt)
+    //console.log(evt)
     store.goIndex(evt.activeIndex)
   }} fullscreen swipeable autoScroll overscrollable>
     {

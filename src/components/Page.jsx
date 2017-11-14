@@ -6,7 +6,7 @@ import DefaultPage from './pages/Default'
 
 
 const Page = observer(({store}) => {
-  console.log(store.type)
+  //console.log(store.type)
   switch (store.type){
     case 'sorter' : return <SortablePage store={store}/>
     case 'page' :
