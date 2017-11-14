@@ -15,6 +15,9 @@ const factory = {
       item.title = item.appendix.title = self.value
       self.parent.insert(item, -2)
       self.value = ''
+      self.parent.parent.items.forEach(item => {
+        if (item.update) item.update()
+      })
     }
   }),
   mixins : ['text']

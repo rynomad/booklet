@@ -8,7 +8,7 @@ const bk = {
       type : 'section',
       items : [
         {
-          title : "page 1",
+          title : "Define Your Goals",
           type : 'sorter',
           items : [
             {
@@ -18,9 +18,10 @@ const bk = {
               template : {
                 type : 'text',
                 editable : true,
+                tag : 'goal',
                 appendix : {
                   title : 'to be changed',
-                  type : 'section',
+                  type : 'appendix',
                   items : [
                     {
                       type : 'page',
@@ -40,6 +41,11 @@ const bk = {
               }
             }
           ]
+        },
+        {
+          title : 'Elaborate Your Goals',
+          type : 'appendices',
+          tag : 'goal'
         },
         {
           title : "page 2",

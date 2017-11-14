@@ -1,4 +1,4 @@
-import {types, getSnapshot, detach, getRoot, isStateTreeNode, walk} from 'mobx-state-tree'
+import {types, getSnapshot, detach, getRoot, walk} from 'mobx-state-tree'
 import {AnyArray, Any, Define} from '../Stores'
 
 const _menuItem = {
@@ -38,13 +38,11 @@ const _viewportItem = {
   mixins : ['_menuItem']
 }
 
-const _collection = {
-  name : '_collection',
-  props : {
-    items : types.optional(AnyArray,[])
-  }, 
-  views : self => ({   
+const _lineage = {
+  name : '_lineage',
+  views : self => ({
     get lineage(){
+      if (!self.items) throw new Error('improper mixin of _lineage type with no items')
       return [self].concat(self.items.reduce((items, node) => {
         if (node.lineage){
           return items.concat(node.lineage);
@@ -53,23 +51,32 @@ const _collection = {
         }
       }, []))
     },
-    get snapshot(){
-      return getSnapshot(self)
-    },
     get posterity(){
       return self.lineage.filter(node => !node.lineage)
+    },
+    get snapshot(){
+      return getSnapshot(self)
     }
   }),
+}
+
+const _collection = {
+  name : '_collection',
+  props : {
+    items : types.optional(AnyArray,[])
+  },
   actions : self => ({
     insert(snapshot, index = 0){
       if (index < 0) index += (self.items.length + 1)
       self.items.unshift(snapshot)
       self.move(0, index)
       walk(self, self._root._afterCreate)
+      if (self.parent && self.parent.items){
+        self.parent.items.forEach(item => item.update && item.update())
+      }
       console.log(getSnapshot(self._root))
     },
     _attachToChildren(){
-
       console.log(getSnapshot(self), self._root)
       self.items.forEach((node) => {
         if (node.setProp) node.setProp('parent', self.id)
@@ -104,8 +111,13 @@ const _collection = {
     },
     setItems(items){
       self.items = items.map(item => item.id ? item.id : item)
+      if (self.parent && self.parent.items){
+        console.log('update from setItems')
+        self.parent.items.forEach(item => item.update && item.update())
+      }
     }
-  })
+  }),
+  mixins : ['_lineage']
 }
 
 const _input = {
@@ -140,7 +152,8 @@ const _pageItem = {
     setPosition(value){
       self._position = value
     }
-  })
+  }),
+  mixins : ['_tagged']
 }
 
 const _section = {
@@ -157,13 +170,36 @@ const _text = {
   mixins : ['_input', '_pageItem']
 }
 
+const _tagged = {
+  name : '_tagged',
+  props : {
+    tag : types.maybe(types.string)
+  },
+  views : self => ({
+    family(){
+      console.log("computing family", self.parent.title);
+      const nodes = []
+      const tag = self.tag
+      walk(self._root.nodes, node => {
+        if (node && node.id && (node.tag === tag) && node !== self){
+          console.log(node.title)
+          nodes.push(node)
+        }
+      })
+      return nodes
+    }
+  })
+}
+
 export default () => {
   Define(_menuItem)
   Define(_viewportItem)
+  Define(_lineage)
   Define(_collection)
   Define(_input)
   Define(_page)
   Define(_section)
+  Define(_tagged)
   Define(_pageItem)
   Define(_text)
 }
